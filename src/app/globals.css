@@ -133,7 +133,7 @@
   --theme-gradient-3: #e3b9ca;
 
   /* Wallpaper: placeholder until user uploads NPURE brand image to Supabase */
-  --theme-wallpaper: url('https://i.ibb.co/3XcMMzX/wp8104164.jpg');
+  --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper.jpg');
 }
 
 .dark {
@@ -379,9 +379,9 @@
     opacity: 1;
     background: linear-gradient(
       165deg,
-      rgba(255, 246, 250, 0.55) 0%,
-      rgba(255, 246, 250, 0.30) 42%,
-      rgba(216, 176, 192, 0.44) 100%
+      rgba(255, 246, 250, 0.35) 0%,
+      rgba(255, 246, 250, 0.15) 42%,
+      rgba(216, 176, 192, 0.25) 100%
     );
   }
 
