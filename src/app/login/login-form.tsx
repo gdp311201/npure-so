@@ -61,14 +61,14 @@ export function LoginForm() {
           />
         </div>
         {error && (
-          <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">
+          <div className="text-xs font-bold text-red-400 bg-red-950/40 border border-red-500/20 rounded-xl py-2 px-3">
             ❌ {error}
           </div>
         )}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition shadow-sm"
+          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-sm transition"
         >
           {loading ? '⏳ Memuat...' : '🔐 Masuk'}
         </button>
