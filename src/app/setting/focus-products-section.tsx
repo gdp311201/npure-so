@@ -22,11 +22,11 @@ interface Product {
 export default function FocusProductsSection({
   focusProducts,
   allProducts,
-  defaultPeriod,
+  period,
 }: {
   focusProducts: FocusProduct[]
   allProducts: Product[]
-  defaultPeriod: string
+  period: string
 }) {
   const [showPicker, setShowPicker] = useState(false)
   const [search, setSearch] = useState('')
@@ -62,7 +62,7 @@ export default function FocusProductsSection({
       const { error: insertError } = await supabase
         .from('focus_product_targets')
         .insert({
-          period: defaultPeriod,
+          period: period,
           product_id: productId,
           target_qty: target,
           created_by: user.id,
@@ -95,7 +95,7 @@ export default function FocusProductsSection({
       const { error: updateError } = await supabase
         .from('focus_product_targets')
         .update({ target_qty: newTarget })
-        .eq('period', defaultPeriod)
+        .eq('period', period)
         .eq('product_id', productId)
       if (updateError) throw new Error(updateError.message)
       router.refresh()
@@ -114,7 +114,7 @@ export default function FocusProductsSection({
       const { error: deleteError } = await supabase
         .from('focus_product_targets')
         .delete()
-        .eq('period', defaultPeriod)
+        .eq('period', period)
         .eq('product_id', productId)
       if (deleteError) throw new Error(deleteError.message)
       router.refresh()
@@ -137,7 +137,7 @@ export default function FocusProductsSection({
 
       {focusProducts.length === 0 ? (
         <div className="text-center py-4">
-          <p className="text-xs text-pink-900/50">Belum ada focus product bulan ini</p>
+          <p className="text-xs text-pink-900/50">Belum ada focus product untuk periode ini</p>
         </div>
       ) : (
         <div className="space-y-2">
