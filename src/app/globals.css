@@ -396,17 +396,19 @@
       rgba(4, 47, 46, 0.65) 100%
     );
   }
-
-  /* Asset card — premium gradient (bright on dark = good contrast) */
+  /* Asset card — premium dark glass with neon green glow */
   .asset-card {
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(to bottom right,
-        color-mix(in srgb, var(--theme-primary) 85%, white),
-        color-mix(in srgb, var(--theme-accent) 85%, white));
-    border: 1px solid rgba(255, 255, 255, 0.20);
-    box-shadow: 0 18px 45px -12px rgba(0, 0, 0, 0.4);
+    background: rgba(16, 185, 129, 0.06);
+    backdrop-filter: blur(12px) saturate(1.5);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+    border: 1px solid rgba(52, 211, 153, 0.20);
+    box-shadow:
+      0 8px 32px -4px rgba(0, 0, 0, 0.5),
+      0 0 28px rgba(16, 185, 129, 0.18),
+      0 0 8px rgba(52, 211, 153, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   /* Modal — dark glass */
