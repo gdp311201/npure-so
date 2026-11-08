@@ -66,7 +66,7 @@ export default async function AppShell({
             <img
               src={LOGO_URL}
               alt="NPURE"
-              className="h-7 w-auto"
+              className="h-9 w-auto"
             />
           </div>
           <a
