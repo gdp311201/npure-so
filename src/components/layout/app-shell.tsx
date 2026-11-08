@@ -18,18 +18,19 @@ export default async function AppShell({
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
-
-  // Get low stock count for badge on Produk tab
-  const { count: lowStockCount } = await supabase
-    .from('v_product_summary')
-    .select('*', { count: 'exact', head: true })
-    .in('stock_status', ['low_stock', 'out_of_stock'])
-    .eq('is_active', true)
+  // ✅ PARALLEL QUERIES — run both at same time instead of sequential
+  const [{ data: profile }, { count: lowStockCount }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('v_product_summary')
+      .select('*', { count: 'exact', head: true })
+      .in('stock_status', ['low_stock', 'out_of_stock'])
+      .eq('is_active', true)
+  ])
 
   return (
     <div className="min-h-screen flex flex-col">
