@@ -1,6 +1,6 @@
 {
-  "name": "NPURE SO — Stock Opname System",
-  "short_name": "NPURE SO",
+  "name": "NPURE — Stock Opname System",
+  "short_name": "NPURE",
   "description": "Sistem stock opname personal untuk brand kosmetik NPURE. Input sell-in, sell-out, opname, dan tracking target bulanan.",
   "start_url": "/",
   "display": "standalone",
