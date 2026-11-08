@@ -119,11 +119,11 @@ export default async function DashboardPage() {
 
             <div className="mb-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-white font-mono">
-                  Rp {(monthOmset / 1000000).toFixed(1)}M
+                <span className="text-lg font-black text-white font-mono">
+                  {formatRupiah(monthOmset)}
                 </span>
-                <span className="text-xs text-white/60">
-                  / Rp {(targetOmset / 1000000).toFixed(0)}M
+                <span className="text-[10px] text-white/60">
+                  / {formatRupiah(targetOmset)}
                 </span>
               </div>
             </div>
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
                 {achievementPct.toFixed(1)}%
               </span>
               <span className="text-[10px] text-white/70">
-                Sisa: Rp {(remainingOmset / 1000000).toFixed(1)}M
+                Sisa: {formatRupiah(remainingOmset)}
               </span>
             </div>
           </div>
