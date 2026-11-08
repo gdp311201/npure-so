@@ -164,7 +164,7 @@
   --theme-gradient-3: #065f46;
 
   /* Wallpaper: NPURE brand image from Supabase Storage */
-  --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper-1.jpg');
+  --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper.jpg');
 }
 
 .dark {
