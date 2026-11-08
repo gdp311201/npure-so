@@ -32,6 +32,7 @@ export default function ProdukManager({ products }: { products: Product[] }) {
 
   const filteredProducts = useMemo(() => {
     let result = products
+    if (tab === 'stock') result = result.filter((p) => p.is_active)
     if (tab === 'manage' && filter === 'aktif') result = result.filter((p) => p.is_active)
     if (search) {
       const q = search.toLowerCase()
