@@ -42,7 +42,6 @@ export default async function AnalyticsPage({
     periodLabel = `${BULAN_LIST[month - 1]} ${year}`
   }
 
-  // Parallel queries
   const [
     { data: products },
     { data: sellOutTx },
@@ -61,11 +60,9 @@ export default async function AnalyticsPage({
     supabase.from('stock_transactions').select('product_id, type, qty').eq('is_deleted', false).lt('transaction_date', dateFrom),
   ])
 
-  // Build product lookup
   const productMap = new Map<string, string>()
   products?.forEach(p => productMap.set(p.id, p.name))
 
-  // Stock before period
   const stockBeforeMap = new Map<string, number>()
   beforeTx?.forEach(tx => {
     const cur = stockBeforeMap.get(tx.product_id) || 0
@@ -74,7 +71,6 @@ export default async function AnalyticsPage({
     else if (tx.type === 'adjustment') stockBeforeMap.set(tx.product_id, cur + tx.qty)
   })
 
-  // Sell-out grouped by product
   const sellOutMap = new Map<string, { name: string; qty: number; omset: number }>()
   sellOutTx?.forEach(tx => {
     const name = productMap.get(tx.product_id) || 'Unknown'
@@ -84,43 +80,32 @@ export default async function AnalyticsPage({
     sellOutMap.set(tx.product_id, ex)
   })
 
-  // Sell-in grouped by product
   const sellInMap = new Map<string, number>()
-  sellInTx?.forEach(tx => {
-    sellInMap.set(tx.product_id, (sellInMap.get(tx.product_id) || 0) + tx.qty)
-  })
-  adjustTx?.forEach(tx => {
-    sellInMap.set(tx.product_id, (sellInMap.get(tx.product_id) || 0) + tx.qty)
-  })
+  sellInTx?.forEach(tx => sellInMap.set(tx.product_id, (sellInMap.get(tx.product_id) || 0) + tx.qty))
+  adjustTx?.forEach(tx => sellInMap.set(tx.product_id, (sellInMap.get(tx.product_id) || 0) + tx.qty))
 
-  // Top 10 sellers
-  const topSellers = Array.from(sellOutMap.values())
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 10)
-    .map(s => ({ name: s.name.length > 25 ? s.name.slice(0, 25) + '...' : s.name, qty: s.qty, omset: s.omset }))
+  const topSellers = Array.from(sellOutMap.values()).sort((a, b) => b.qty - a.qty).slice(0, 10)
+    .map(s => ({ name: s.name.length > 28 ? s.name.slice(0, 28) + '...' : s.name, qty: s.qty, omset: s.omset }))
 
-  // Slow movers (bottom 10, only products that sold)
-  const slowMovers = Array.from(sellOutMap.values())
-    .filter(s => s.qty > 0)
-    .sort((a, b) => a.qty - b.qty)
-    .slice(0, 10)
-    .map(s => ({ name: s.name.length > 25 ? s.name.slice(0, 25) + '...' : s.name, qty: s.qty, omset: s.omset }))
+  const slowMovers = Array.from(sellOutMap.values()).filter(s => s.qty > 0).sort((a, b) => a.qty - b.qty).slice(0, 10)
+    .map(s => ({ name: s.name.length > 28 ? s.name.slice(0, 28) + '...' : s.name, qty: s.qty, omset: s.omset }))
 
-  // Daily trend
-  const dailyMap = new Map<string, { qty: number; omset: number; customer: number }>()
+  // Weekday summary — average sellout per weekday
+  const weekdayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+  const weekdayData = weekdayNames.map(name => ({ day: name, total_qty: 0, total_omset: 0, count: 0 }))
   sales?.forEach(sale => {
-    const date = sale.transaction_date
-    const ex = dailyMap.get(date) || { qty: 0, omset: 0, customer: 0 }
-    ex.qty += sale.total_qty
-    ex.omset += Number(sale.net_amount)
-    ex.customer += 1
-    dailyMap.set(date, ex)
+    const [y, m, d] = sale.transaction_date.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    const wd = date.getDay()
+    weekdayData[wd].total_qty += sale.total_qty
+    weekdayData[wd].total_omset += Number(sale.net_amount)
+    weekdayData[wd].count += 1
   })
-  const dailyTrend = Array.from(dailyMap.entries())
-    .map(([date, data]) => ({ date: date.slice(8) + ' ' + BULAN_LIST[Number(date.slice(5, 7)) - 1].slice(0, 3), ...data }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const weekdaySummary = weekdayData
+    .map(w => ({ day: w.day, avg_qty: w.count > 0 ? Math.round(w.total_qty / w.count) : 0, total_qty: w.total_qty, days_active: w.count }))
+    .filter(w => w.days_active > 0)
+    .sort((a, b) => b.avg_qty - a.avg_qty)
 
-  // Stock turnover
   const turnover = (products || []).map(p => {
     const stockAwal = stockBeforeMap.get(p.id) || 0
     const sold = sellOutMap.get(p.id)?.qty || 0
@@ -129,25 +114,19 @@ export default async function AnalyticsPage({
     const turnoverPct = stockAwal > 0 ? Math.round((sold / stockAwal) * 100) : 0
     return {
       name: p.name.length > 30 ? p.name.slice(0, 30) + '...' : p.name,
-      stock_awal: stockAwal,
-      sold,
-      incoming,
-      current_stock: currentStock,
+      stock_awal: stockAwal, sold, incoming, current_stock: currentStock,
       turnover_pct: turnoverPct,
       status: turnoverPct > 100 ? 'fast' : turnoverPct > 50 ? 'healthy' : turnoverPct > 10 ? 'slow' : 'dead',
     }
   }).filter(t => t.sold > 0).sort((a, b) => b.turnover_pct - a.turnover_pct)
 
-  // Restock alert (current stock <= 10)
   const restockAlert = (products || []).map(p => {
     const stockAwal = stockBeforeMap.get(p.id) || 0
     const sold = sellOutMap.get(p.id)?.qty || 0
     const incoming = sellInMap.get(p.id) || 0
-    const currentStock = stockAwal + incoming - sold
-    return { name: p.name, current_stock: currentStock, sold, incoming }
+    return { name: p.name, current_stock: stockAwal + incoming - sold, sold, incoming }
   }).filter(p => p.current_stock <= 10).sort((a, b) => a.current_stock - b.current_stock)
 
-  // Overview
   const totalQty = sellOutTx?.reduce((s, tx) => s + tx.qty, 0) || 0
   const grossOmset = sales?.reduce((s, sale) => s + Number(sale.gross_amount), 0) || 0
   const netOmset = sales?.reduce((s, sale) => s + Number(sale.net_amount), 0) || 0
@@ -159,7 +138,7 @@ export default async function AnalyticsPage({
     overview: { total_qty: totalQty, total_customer: totalCustomers, gross_omset: grossOmset, net_omset: netOmset, target_omset: targetOmset, achievement_pct: achievementPct },
     top_sellers: topSellers,
     slow_movers: slowMovers,
-    daily_trend: dailyTrend,
+    weekday_summary: weekdaySummary,
     turnover,
     restock_alert: restockAlert,
     period_label: periodLabel,
