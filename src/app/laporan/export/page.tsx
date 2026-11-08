@@ -3,7 +3,7 @@ import ExportForm from './export-form'
 
 export default async function ExportPage() {
   return (
-    <AppShell title="Export">
+    <AppShell title="Export" showBackButton backHref="/laporan">
       <ExportForm />
     </AppShell>
   )
