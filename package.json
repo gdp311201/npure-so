@@ -12,6 +12,7 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "nextjs-toploader": "^1.6.6",
     "@supabase/supabase-js": "^2.45.0",
     "@supabase/ssr": "^0.5.0",
     "@ducanh2912/next-pwa": "^10.2.0",
