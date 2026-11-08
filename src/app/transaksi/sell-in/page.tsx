@@ -1,13 +1,21 @@
+import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/layout/app-shell'
+import SellInCart from './sell-in-cart'
 
 export default async function SellInPage() {
+  const supabase = await createClient()
+
+  const jakartaDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
+
+  const { data: products } = await supabase
+    .from('v_product_summary')
+    .select('id, name, current_price, current_stock')
+    .eq('is_active', true)
+    .order('name')
+
   return (
     <AppShell title="Barang Masuk">
-      <div className="glass-card rounded-2xl p-6 text-center">
-        <div className="text-4xl mb-3">📥</div>
-        <h2 className="text-lg font-bold text-pink-950">Input Barang Masuk</h2>
-        <p className="text-sm text-pink-800/70 mt-1">Sell-In cart akan dibangun di Phase 1c-2.</p>
-      </div>
+      <SellInCart products={products || []} defaultDate={jakartaDate} />
     </AppShell>
   )
 }
