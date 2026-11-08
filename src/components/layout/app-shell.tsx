@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import BottomNav from './bottom-nav'
 
+const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/npure-assets/logo.png`;
+
 export default async function AppShell({
   children,
   title,
@@ -35,7 +37,11 @@ export default async function AppShell({
       <header className="glass-nav-top sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🖤</span>
+            <img
+              src={LOGO_URL}
+              alt="NPURE"
+              className="w-7 h-7 rounded-lg object-cover"
+            />
             <div>
               <h1 className="text-sm font-bold text-pink-950 leading-tight">NPURE SO</h1>
               <p className="text-[10px] text-pink-700/60 leading-tight">{title}</p>
