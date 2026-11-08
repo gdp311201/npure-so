@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import BottomNav from './bottom-nav'
 
 const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/npure-assets/logo.png`;
@@ -7,9 +8,13 @@ const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/publ
 export default async function AppShell({
   children,
   title,
+  showBackButton = false,
+  backHref,
 }: {
   children: React.ReactNode
   title: string
+  showBackButton?: boolean
+  backHref?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,7 +23,6 @@ export default async function AppShell({
     redirect('/login')
   }
 
-  // ✅ PARALLEL QUERIES — run both at same time instead of sequential
   const [{ data: profile }, { count: lowStockCount }] = await Promise.all([
     supabase
       .from('profiles')
@@ -38,13 +42,34 @@ export default async function AppShell({
       <header className="glass-nav-top sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {showBackButton && backHref && (
+              <Link
+                href={backHref}
+                className="glass-mini rounded-full w-8 h-8 flex items-center justify-center hover:bg-white/80 transition flex-shrink-0"
+                aria-label="Kembali"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-pink-950"
+                >
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </Link>
+            )}
             <img
               src={LOGO_URL}
               alt="NPURE"
               className="w-7 h-7 rounded-lg object-cover"
             />
             <div>
-              <h1 className="text-sm font-bold text-pink-950 leading-tight">NPURE SO</h1>
+              <h1 className="text-sm font-bold text-pink-950 leading-tight">NPURE</h1>
               <p className="text-[10px] text-pink-700/60 leading-tight">{title}</p>
             </div>
           </div>
@@ -61,7 +86,7 @@ export default async function AppShell({
       </header>
 
       {/* Page Content */}
-      <main className="flex-1 max-w-md mx-auto w-full px-4 py-4 pb-24">
+      <main className="flex-1 max-w-md mx-auto w-full px-4 py-4 pb-28">
         {children}
       </main>
 
