@@ -38,14 +38,14 @@ export default async function AppShell({
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Nav */}
+      {/* Top Nav — pure logo only, no text */}
       <header className="glass-nav-top sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             {showBackButton && backHref && (
               <Link
                 href={backHref}
-                className="glass-mini rounded-full w-8 h-8 flex items-center justify-center hover:bg-white/80 transition flex-shrink-0"
+                className="glass-mini rounded-full w-8 h-8 flex items-center justify-center hover:bg-white/20 transition flex-shrink-0"
                 aria-label="Kembali"
               >
                 <svg
@@ -63,15 +63,12 @@ export default async function AppShell({
                 </svg>
               </Link>
             )}
+            {/* Logo NPURE — landscape 1078x360, no rounded, no object-cover */}
             <img
               src={LOGO_URL}
               alt="NPURE"
-              className="w-7 h-7 rounded-lg object-cover"
+              className="h-7 w-auto"
             />
-            <div>
-              <h1 className="text-sm font-bold text-pink-950 leading-tight">NPURE</h1>
-              <p className="text-[10px] text-pink-700/60 leading-tight">{title}</p>
-            </div>
           </div>
           <a
             href="/setting"
