@@ -14,7 +14,7 @@ export default async function SellInPage() {
     .order('name')
 
   return (
-    <AppShell title="Barang Masuk">
+    <AppShell title="Barang Masuk" showBackButton backHref="/transaksi">
       <SellInCart products={products || []} defaultDate={jakartaDate} />
     </AppShell>
   )
