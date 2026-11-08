@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import BottomNav from './bottom-nav'
 
-const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/npure-assets/logo_app.png`;
+const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/npure-assets/NPURE-Logo-White-1.png`;
 
 export default async function AppShell({
   children,
@@ -38,7 +38,7 @@ export default async function AppShell({
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Nav — pure logo only, no text */}
+      {/* Top Nav — pure logo only */}
       <header className="glass-nav-top sticky top-0 z-40 px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -63,7 +63,6 @@ export default async function AppShell({
                 </svg>
               </Link>
             )}
-            {/* Logo NPURE — landscape 1078x360, no rounded, no object-cover */}
             <img
               src={LOGO_URL}
               alt="NPURE"
@@ -74,7 +73,15 @@ export default async function AppShell({
             href="/setting"
             className="glass-mini rounded-full px-3 py-1.5 text-xs font-semibold text-pink-950 flex items-center gap-2"
           >
-            <span className="w-6 h-6 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 flex items-center justify-center text-white text-[10px] font-bold">
+            {/* Avatar — premium neon green glow, senada Monthly Target card */}
+            <span
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+              style={{
+                background: 'rgba(6, 78, 59, 0.6)',
+                border: '1px solid rgba(52, 211, 153, 0.40)',
+                boxShadow: '0 0 8px rgba(52, 211, 153, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+              }}
+            >
               {(profile?.full_name || 'U').charAt(0).toUpperCase()}
             </span>
             <span className="hidden sm:inline">{profile?.full_name || 'User'}</span>
