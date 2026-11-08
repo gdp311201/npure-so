@@ -12,6 +12,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/npure-assets/logo.png`;
+
 export const metadata: Metadata = {
   title: "NPURE SO — Stock Opname System",
   description: "Sistem stock opname personal untuk brand kosmetik NPURE",
@@ -22,8 +24,9 @@ export const metadata: Metadata = {
     title: "NPURE SO",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-apple-touch.png",
+    icon: LOGO_URL,
+    apple: LOGO_URL,
+    shortcut: LOGO_URL,
   },
 };
 
