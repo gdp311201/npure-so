@@ -210,6 +210,11 @@
      Receipt must stay: light bg + dark text for PNG export
      ============================================================ */
 
+  /* CRITICAL: Force dark base text + light bg ON the .receipt-paper element itself.
+     The element has class "text-pink-950" which is INVERTED to near-white (#ecfdf5).
+     This !important overrides that inversion so the base text is dark green. */
+  .receipt-paper { color: #064e3b !important; background: #f0fdf4 !important; }
+
   /* Backgrounds — light green (NOT dark/inverted) */
   .receipt-paper .bg-pink-50 { background: #ecfdf5 !important; }
   .receipt-paper .bg-pink-50\/60 { background: rgba(236, 253, 245, 0.6) !important; }
