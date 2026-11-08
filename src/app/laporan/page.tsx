@@ -9,7 +9,18 @@ export default async function LaporanPage() {
             <div className="text-3xl">📈</div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-pink-950">Interactive Summary</h2>
-              <p className="text-xs text-pink-800/70">Lihat sell-out per produk per bulan</p>
+              <p className="text-xs text-pink-800/70">Lihat sell-out per produk per periode</p>
+            </div>
+            <div className="text-pink-400 text-lg">→</div>
+          </div>
+        </a>
+
+        <a href="/laporan/tracking" className="block">
+          <div className="glass-card rounded-2xl p-4 flex items-center gap-3 transition active:scale-95">
+            <div className="text-3xl">📋</div>
+            <div className="flex-1">
+              <h2 className="text-sm font-bold text-pink-950">Product Tracking</h2>
+              <p className="text-xs text-pink-800/70">Mutasi produk: stock awal, pergerakan, stock akhir</p>
             </div>
             <div className="text-pink-400 text-lg">→</div>
           </div>
