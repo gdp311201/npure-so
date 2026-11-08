@@ -248,6 +248,13 @@
   .receipt-paper .border-pink-200\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
   .receipt-paper .border-pink-200\/50 { border-color: rgba(167, 243, 208, 0.5) !important; }
   .receipt-paper .border-pink-100\/40 { border-color: rgba(209, 250, 229, 0.4) !important; }
+
+  /* Gray text — force dark (Tailwind default gray might be light in dark theme) */
+  .receipt-paper .text-gray-600 { color: #4b5563 !important; }
+  .receipt-paper .text-gray-700 { color: #374151 !important; }
+  .receipt-paper .text-gray-800 { color: #1f2937 !important; }
+  .receipt-paper .text-gray-500 { color: #6b7280 !important; }
+  .receipt-paper .text-gray-400 { color: #9ca3af !important; }
 }
 
 /* ============================================================
