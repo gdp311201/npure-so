@@ -12,22 +12,25 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            supabaseResponse = NextResponse.next({ request })
+            supabaseResponse.cookies.set(name, value, options as any)
+          })
         },
       },
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Do not run code between createServerClient and supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Protected routes — redirect to /login if no user
   const protectedPaths = ['/dashboard', '/transaksi', '/produk', '/laporan', '/setting', '/onboarding']
-  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
 
   if (!user && isProtectedPath) {
     const url = request.nextUrl.clone()
