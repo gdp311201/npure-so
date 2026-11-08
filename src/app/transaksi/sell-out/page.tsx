@@ -25,7 +25,7 @@ export default async function SellOutPage() {
   const discountRate = monthlyConfig?.discount_rate || 0.25
 
   return (
-    <AppShell title="Input Penjualan">
+    <AppShell title="Input Penjualan" showBackButton backHref="/transaksi">
       <SellOutCart
         products={products || []}
         discountRate={discountRate}
