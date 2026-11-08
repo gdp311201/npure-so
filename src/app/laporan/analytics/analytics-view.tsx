@@ -8,10 +8,11 @@ interface AnalyticsData {
   overview: { total_qty: number; total_customer: number; gross_omset: number; net_omset: number; target_omset: number; achievement_pct: number }
   top_sellers: Array<{ name: string; qty: number; omset: number }>
   slow_movers: Array<{ name: string; qty: number; omset: number }>
+  demand_consistency: Array<{ name: string; days_sold: number; total_qty: number; avg_per_day: number; consistency_pct: number }>
   weekday_summary: Array<{ day: string; avg_qty: number; total_qty: number; days_active: number }>
-  turnover: Array<{ name: string; stock_awal: number; sold: number; incoming: number; current_stock: number; turnover_pct: number; status: string }>
   restock_alert: Array<{ name: string; current_stock: number; sold: number; incoming: number }>
   period_label: string
+  total_days: number
 }
 
 export default function AnalyticsView({ data, mode, searchParams }: { data: AnalyticsData; mode: string; searchParams: any }) {
@@ -30,8 +31,6 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
     router.refresh()
   }
 
-  const turnoverColors: Record<string, string> = { fast: '#ef4444', healthy: '#10b981', slow: '#f59e0b', dead: '#6b7280' }
-  const turnoverLabels: Record<string, string> = { fast: '⚡ Cepat Habis', healthy: '✅ Sehat', slow: '🐢 Lambat', dead: '💀 Dead Stock' }
   const medals = ['🥇', '🥈', '🥉']
 
   return (
@@ -88,7 +87,7 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         </div>
       </div>
 
-      {/* Top 10 Sellers — Ranked List with CSS Progress Bars */}
+      {/* Top 10 Sellers */}
       {data.top_sellers.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
           <h3 className="text-xs font-bold text-pink-950 mb-3">🏆 Top 10 Sellers (by Qty)</h3>
@@ -115,7 +114,7 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         </div>
       )}
 
-      {/* Slow Movers — Simple List */}
+      {/* Slow Movers */}
       {data.slow_movers.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
           <h3 className="text-xs font-bold text-pink-950 mb-3">🐢 Slow Movers (Bottom 10)</h3>
@@ -131,7 +130,50 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         </div>
       )}
 
-      {/* Weekday Summary — Average Sellout per Weekday */}
+      {/* Demand Consistency — Sell Frequency */}
+      {data.demand_consistency.length > 0 && (
+        <div className="glass-card rounded-2xl p-4">
+          <h3 className="text-xs font-bold text-pink-950 mb-1">📊 Demand Consistency (Sell Frequency)</h3>
+          <p className="text-[9px] text-pink-700/50 mb-3">
+            Seberapa sering produk terjual dalam {data.total_days} hari periode
+          </p>
+          <div className="space-y-2.5">
+            {data.demand_consistency.map((item, i) => {
+              const maxDays = data.demand_consistency[0]?.days_sold || 1
+              const barWidth = Math.max((item.days_sold / maxDays) * 100, 5)
+              const isStaple = item.consistency_pct >= 80
+              const isOneTime = item.days_sold <= 1
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs flex-shrink-0 w-4 text-pink-700/60">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] font-medium text-pink-950 truncate pr-2">
+                        {item.name}
+                        {isStaple && <span className="text-emerald-400 ml-1">★</span>}
+                        {isOneTime && <span className="text-amber-400 ml-1">○</span>}
+                      </span>
+                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap">
+                        {item.days_sold}h · {item.avg_per_day}/d · {item.total_qty}pcs
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-pink-950/10 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${isStaple ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : isOneTime ? 'bg-amber-500' : 'bg-gradient-to-r from-teal-600 to-teal-500'}`} style={{ width: `${barWidth}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex gap-2 mt-3 flex-wrap">
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">★ Staple (≥80% hari)</span>
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400">Consistent (20-79%)</span>
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">○ One-time (1 hari)</span>
+          </div>
+        </div>
+      )}
+
+      {/* Weekday Summary */}
       {data.weekday_summary.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
           <h3 className="text-xs font-bold text-pink-950 mb-3">📅 Sell-Out by Weekday (Average)</h3>
@@ -148,15 +190,10 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
                   </span>
                   <div className="flex-1">
                     <div className="h-3 rounded-full bg-pink-950/10 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${isPeak ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : isLow ? 'bg-rose-500' : 'bg-gradient-to-r from-teal-600 to-teal-500'}`}
-                        style={{ width: `${barWidth}%` }}
-                      />
+                      <div className={`h-full rounded-full transition-all duration-500 ${isPeak ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : isLow ? 'bg-rose-500' : 'bg-gradient-to-r from-teal-600 to-teal-500'}`} style={{ width: `${barWidth}%` }} />
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap w-20 text-right">
-                    avg {wd.avg_qty} pcs
-                  </span>
+                  <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap w-20 text-right">avg {wd.avg_qty} pcs</span>
                 </div>
               )
             })}
@@ -168,27 +205,6 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
           <p className="text-[8px] text-pink-700/40 mt-1">
             Berdasarkan {data.weekday_summary.reduce((s, d) => s + d.days_active, 0)} hari penjualan dalam periode ini
           </p>
-        </div>
-      )}
-
-      {/* Stock Turnover */}
-      {data.turnover.length > 0 && (
-        <div className="glass-card rounded-2xl p-4">
-          <h3 className="text-xs font-bold text-pink-950 mb-3">⚡ Stock Turnover Rate</h3>
-          <div className="space-y-1.5">
-            {data.turnover.slice(0, 15).map((t, i) => (
-              <div key={i} className="flex items-center justify-between text-[10px] py-1 border-b border-pink-100/20">
-                <span className="text-pink-950 flex-1 truncate pr-2">{t.name}</span>
-                <span className="text-pink-700/60 whitespace-nowrap mr-2">Awal: {t.stock_awal} | Sold: {t.sold}</span>
-                <span className="font-bold whitespace-nowrap" style={{ color: turnoverColors[t.status] }}>{t.turnover_pct}%</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {Object.entries(turnoverLabels).map(([k, v]) => (
-              <span key={k} className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: `${turnoverColors[k]}20`, color: turnoverColors[k] }}>{v}</span>
-            ))}
-          </div>
         </div>
       )}
 
