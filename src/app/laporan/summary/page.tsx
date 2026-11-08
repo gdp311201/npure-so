@@ -68,7 +68,7 @@ export default async function SummaryPage({
   const monthName = BULAN_LIST[month - 1]
 
   return (
-    <AppShell title="Summary">
+    <AppShell title="Summary" showBackButton backHref="/laporan">
       <div className="space-y-4">
         <MonthSelector defaultMonth={month} defaultYear={year} />
 
