@@ -17,8 +17,7 @@ export default async function AnalyticsPage({
 
   if (mode === 'harian') {
     const date = params.date || getTodayISO()
-    dateFrom = date
-    dateTo = date
+    dateFrom = date; dateTo = date
     const [y, m, d] = date.split('-').map(Number)
     periodLabel = new Date(y, m - 1, d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   } else if (mode === 'mingguan') {
@@ -27,11 +26,9 @@ export default async function AnalyticsPage({
     const date = new Date(y, m - 1, d)
     const dayOfWeek = date.getDay()
     const monday = new Date(y, m - 1, d - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
+    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
     const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
-    dateFrom = fmt(monday)
-    dateTo = fmt(sunday)
+    dateFrom = fmt(monday); dateTo = fmt(sunday)
     periodLabel = `${monday.getDate()} ${BULAN_LIST[monday.getMonth()].slice(0, 3)} - ${sunday.getDate()} ${BULAN_LIST[sunday.getMonth()].slice(0, 3)} ${sunday.getFullYear()}`
   } else {
     const month = params.month ? Number(params.month) : getCurrentMonth()
@@ -41,6 +38,9 @@ export default async function AnalyticsPage({
     dateTo = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
     periodLabel = `${BULAN_LIST[month - 1]} ${year}`
   }
+
+  // Total days in period (for consistency %)
+  const totalDays = Math.round((new Date(dateTo + 'T00:00:00').getTime() - new Date(dateFrom + 'T00:00:00').getTime()) / 86400000) + 1
 
   const [
     { data: products },
@@ -52,7 +52,7 @@ export default async function AnalyticsPage({
     { data: beforeTx },
   ] = await Promise.all([
     supabase.from('v_product_summary').select('id, name, current_stock, current_price').eq('is_active', true).order('name'),
-    supabase.from('stock_transactions').select('product_id, qty, unit_price').eq('type', 'sell_out').eq('is_deleted', false).gte('transaction_date', dateFrom).lte('transaction_date', dateTo),
+    supabase.from('stock_transactions').select('product_id, qty, unit_price, transaction_date').eq('type', 'sell_out').eq('is_deleted', false).gte('transaction_date', dateFrom).lte('transaction_date', dateTo),
     supabase.from('stock_transactions').select('product_id, qty').eq('type', 'sell_in').eq('is_deleted', false).gte('transaction_date', dateFrom).lte('transaction_date', dateTo),
     supabase.from('stock_transactions').select('product_id, qty').eq('type', 'adjustment').eq('is_deleted', false).gte('transaction_date', dateFrom).lte('transaction_date', dateTo),
     supabase.from('sales').select('transaction_date, total_qty, gross_amount, net_amount').gte('transaction_date', dateFrom).lte('transaction_date', dateTo).order('transaction_date'),
@@ -71,13 +71,18 @@ export default async function AnalyticsPage({
     else if (tx.type === 'adjustment') stockBeforeMap.set(tx.product_id, cur + tx.qty)
   })
 
+  // Sell-out grouped by product + track distinct dates
   const sellOutMap = new Map<string, { name: string; qty: number; omset: number }>()
+  const sellOutDatesMap = new Map<string, Set<string>>()
   sellOutTx?.forEach(tx => {
     const name = productMap.get(tx.product_id) || 'Unknown'
     const ex = sellOutMap.get(tx.product_id) || { name, qty: 0, omset: 0 }
     ex.qty += tx.qty
     ex.omset += Number(tx.unit_price) * tx.qty
     sellOutMap.set(tx.product_id, ex)
+    // Track distinct dates
+    if (!sellOutDatesMap.has(tx.product_id)) sellOutDatesMap.set(tx.product_id, new Set())
+    sellOutDatesMap.get(tx.product_id)!.add(tx.transaction_date)
   })
 
   const sellInMap = new Map<string, number>()
@@ -90,7 +95,21 @@ export default async function AnalyticsPage({
   const slowMovers = Array.from(sellOutMap.values()).filter(s => s.qty > 0).sort((a, b) => a.qty - b.qty).slice(0, 10)
     .map(s => ({ name: s.name.length > 28 ? s.name.slice(0, 28) + '...' : s.name, qty: s.qty, omset: s.omset }))
 
-  // Weekday summary — average sellout per weekday
+  // DEMAND CONSISTENCY — sell frequency per product
+  const demandConsistency = Array.from(sellOutMap.entries())
+    .map(([id, data]) => {
+      const daysSold = sellOutDatesMap.get(id)?.size || 0
+      return {
+        name: data.name.length > 28 ? data.name.slice(0, 28) + '...' : data.name,
+        days_sold: daysSold,
+        total_qty: data.qty,
+        avg_per_day: daysSold > 0 ? Math.round((data.qty / daysSold) * 10) / 10 : 0,
+        consistency_pct: Math.round((daysSold / totalDays) * 100),
+      }
+    })
+    .sort((a, b) => b.days_sold - a.days_sold)
+
+  // Weekday summary
   const weekdayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
   const weekdayData = weekdayNames.map(name => ({ day: name, total_qty: 0, total_omset: 0, count: 0 }))
   sales?.forEach(sale => {
@@ -106,20 +125,7 @@ export default async function AnalyticsPage({
     .filter(w => w.days_active > 0)
     .sort((a, b) => b.avg_qty - a.avg_qty)
 
-  const turnover = (products || []).map(p => {
-    const stockAwal = stockBeforeMap.get(p.id) || 0
-    const sold = sellOutMap.get(p.id)?.qty || 0
-    const incoming = sellInMap.get(p.id) || 0
-    const currentStock = stockAwal + incoming - sold
-    const turnoverPct = stockAwal > 0 ? Math.round((sold / stockAwal) * 100) : 0
-    return {
-      name: p.name.length > 30 ? p.name.slice(0, 30) + '...' : p.name,
-      stock_awal: stockAwal, sold, incoming, current_stock: currentStock,
-      turnover_pct: turnoverPct,
-      status: turnoverPct > 100 ? 'fast' : turnoverPct > 50 ? 'healthy' : turnoverPct > 10 ? 'slow' : 'dead',
-    }
-  }).filter(t => t.sold > 0).sort((a, b) => b.turnover_pct - a.turnover_pct)
-
+  // Restock alert (current stock <= 10)
   const restockAlert = (products || []).map(p => {
     const stockAwal = stockBeforeMap.get(p.id) || 0
     const sold = sellOutMap.get(p.id)?.qty || 0
@@ -138,10 +144,11 @@ export default async function AnalyticsPage({
     overview: { total_qty: totalQty, total_customer: totalCustomers, gross_omset: grossOmset, net_omset: netOmset, target_omset: targetOmset, achievement_pct: achievementPct },
     top_sellers: topSellers,
     slow_movers: slowMovers,
+    demand_consistency: demandConsistency,
     weekday_summary: weekdaySummary,
-    turnover,
     restock_alert: restockAlert,
     period_label: periodLabel,
+    total_days: totalDays,
   }
 
   return (
