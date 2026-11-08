@@ -530,6 +530,30 @@
     font-family: 'Courier New', monospace;
     border: 1px solid rgba(167, 243, 208, 0.6);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    /* Override inverted color tokens — receipt must stay light theme */
+    --color-pink-50: #ecfdf5;
+    --color-pink-100: #d1fae5;
+    --color-pink-200: #a7f3d0;
+    --color-pink-300: #6ee7b7;
+    --color-pink-400: #34d399;
+    --color-pink-500: #10b981;
+    --color-pink-600: #059669;
+    --color-pink-700: #047857;
+    --color-pink-800: #065f46;
+    --color-pink-900: #064e3b;
+    --color-pink-950: #022c22;
+    --color-rose-400: #fb7185;
+    --color-rose-500: #f43f5e;
+    --color-rose-600: #e11d48;
+  }
+
+  /* White text inside receipt → dark green (readable on light bg) */
+  .receipt-paper .text-white,
+  .receipt-paper .text-white\/90,
+  .receipt-paper .text-white\/80,
+  .receipt-paper .text-white\/70,
+  .receipt-paper .text-white\/60 {
+    color: #064e3b !important;
   }
 
   .receipt-tear-line {
