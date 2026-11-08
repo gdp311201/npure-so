@@ -20,7 +20,13 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loading}
-      className="w-full bg-white/80 hover:bg-white disabled:opacity-60 text-rose-700 font-semibold py-2.5 px-4 rounded-xl border border-rose-200/80 text-sm transition"
+      className="w-full font-bold py-3 px-4 rounded-xl text-sm transition disabled:opacity-50"
+      style={{
+        background: 'rgba(127, 29, 29, 0.15)',
+        border: '1px solid rgba(248, 113, 113, 0.25)',
+        color: '#fca5a5',
+        boxShadow: '0 0 12px rgba(248, 113, 113, 0.08)',
+      }}
     >
       {loading ? '⏳ Keluar...' : '🚪 Keluar'}
     </button>
