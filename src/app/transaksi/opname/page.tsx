@@ -14,7 +14,7 @@ export default async function OpnamePage() {
     .order('name')
 
   return (
-    <AppShell title="Stock Opname">
+    <AppShell title="Stock Opname" showBackButton backHref="/transaksi">
       <OpnameForm products={products || []} defaultDate={jakartaDate} />
     </AppShell>
   )
