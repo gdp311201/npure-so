@@ -1,24 +1,23 @@
 /* ============================================================
-   NPURE SO — Global Stylesheet (Glassmorphism Pink Theme)
+   NPURE — Global Stylesheet (Glassmorphism Green Theme)
    ============================================================
    Project    : NPURE Stock Opname System
-   Stack      : Next.js 16 + Tailwind v4 + shadcn/ui
-   Theme      : iOS-style Glassmorphism, Pink-Rose Locked
-   Adapted    : From user-provided CSS (2026-11-08)
+   Stack      : Next.js 15 + Tailwind v4 + shadcn/ui
+   Theme      : iOS-style Glassmorphism, Emerald-Teal Locked
+   Updated    : 2026-11-08 — Green theme overhaul
    ============================================================
 
-   CHANGES FROM ORIGINAL:
-   - Removed theme picker support (--theme-primary locked to pink)
-   - Removed finance-specific glass variants (kasbank, investasi)
-   - Added NPURE SO-specific glass variants:
-     • glass-stock-low    (red tint for low stock alert)
-     • glass-stock-ok     (green tint for healthy stock)
-     • glass-focus        (purple/pink tint for focus product)
-     • glass-sell-in      (emerald tint for sell-in transactions)
-     • glass-sell-out     (rose tint for sell-out transactions)
-     • glass-opname       (amber tint for stock opname)
-   - Replaced "Budgeting Master Sync" references with "NPURE SO"
-   - Adjusted blur values for stocktaking dashboard readability
+   GREEN THEME CHANGES:
+   - Pink → Emerald (#10b981) as primary brand color
+   - Rose → Teal (#14b8a6) as accent
+   - Sell-In glass changed from green → blue (avoid brand confusion)
+   - Focus glass changed from purple → teal
+   - All shadows/borders updated from pink-tinted → green-tinted
+   - Tailwind pink/rose color tokens overridden in @theme inline
+     so all component files auto-render green without changes
+   - Wallpaper updated to wallpaper-1.jpg
+   - Floating bottom nav (rounded, margin from bottom)
+   - iOS date input overflow fix
    ============================================================ */
 
 @import "tailwindcss";
@@ -65,9 +64,41 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* NPURE brand colors — LOCKED (no theme picker) */
+  /* NPURE brand colors — GREEN theme (locked) */
   --color-theme-primary: var(--theme-primary);
   --color-theme-accent: var(--theme-accent);
+
+  /* ============================================================
+     PINK → EMERALD COLOR TOKEN OVERRIDE
+     All Tailwind pink-* classes auto-render as emerald (green)
+     ============================================================ */
+  --color-pink-50: #ecfdf5;
+  --color-pink-100: #d1fae5;
+  --color-pink-200: #a7f3d0;
+  --color-pink-300: #6ee7b7;
+  --color-pink-400: #34d399;
+  --color-pink-500: #10b981;
+  --color-pink-600: #059669;
+  --color-pink-700: #047857;
+  --color-pink-800: #065f46;
+  --color-pink-900: #064e3b;
+  --color-pink-950: #022c22;
+
+  /* ============================================================
+     ROSE → TEAL COLOR TOKEN OVERRIDE
+     All Tailwind rose-* classes auto-render as teal
+     ============================================================ */
+  --color-rose-50: #f0fdfa;
+  --color-rose-100: #ccfbf1;
+  --color-rose-200: #99f6e4;
+  --color-rose-300: #5eead4;
+  --color-rose-400: #2dd4bf;
+  --color-rose-500: #14b8a6;
+  --color-rose-600: #0d9488;
+  --color-rose-700: #0f766e;
+  --color-rose-800: #115e59;
+  --color-rose-900: #134e4a;
+  --color-rose-950: #042f2e;
 }
 
 :root {
@@ -108,7 +139,7 @@
      GLASSMORPHISM TUNING PANEL (iOS-style)
      Tuned for stocktaking dashboard readability
      ============================================================ */
-  --blur-wallpaper: 0px;
+  --blur-wallpaper: 1px;
   --blur-lockscreen: 1.8px;
   --dim-lockscreen: 0.85;
   --blur-page: 3px;
@@ -117,7 +148,7 @@
   --blur-card: 1.8px;
   --blur-input: 8px;
 
-  --dim-wallpaper: 0.75;
+  --dim-wallpaper: 1.15;
   --veil-strength: 1;
   --page-light: 0.30;
   --page-dark: 0;
@@ -125,15 +156,15 @@
   --wallpaper-motion: wallpaper-kenburns;
   --wallpaper-motion-speed: 45s;
 
-  /* NPURE brand — LOCKED pink/rose */
-  --theme-primary: #ec4899;
-  --theme-accent: #f43f5e;
-  --theme-gradient-1: #8a96a8;
-  --theme-gradient-2: #ba9eb1;
-  --theme-gradient-3: #e3b9ca;
+  /* NPURE brand — GREEN theme (locked) */
+  --theme-primary: #10b981;
+  --theme-accent: #34d399;
+  --theme-gradient-1: #064e3b;
+  --theme-gradient-2: #047857;
+  --theme-gradient-3: #065f46;
 
-  /* Wallpaper: placeholder until user uploads NPURE brand image to Supabase */
-  --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper.jpg');
+  /* Wallpaper: NPURE brand image from Supabase Storage */
+  --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper-1.jpg');
 }
 
 .dark {
@@ -189,37 +220,37 @@
 }
 
 /* ============================================================
-   THEME-AWARE COLOR OVERRIDES (Pink/Rose locked)
+   THEME-AWARE COLOR OVERRIDES (Emerald/Teal locked)
    Override Tailwind's pink/rose classes to use CSS variables
    ============================================================ */
 @layer utilities {
   .bg-gradient-to-r.from-pink-400.to-rose-400,
   .bg-gradient-to-r.from-pink-400.to-rose-400:hover {
-    background-image: linear-gradient(to right, var(--theme-primary, #f472b6), var(--theme-accent, #fb7185));
+    background-image: linear-gradient(to right, var(--theme-primary, #34d399), var(--theme-accent, #2dd4bf));
   }
   .bg-gradient-to-r.from-pink-500.to-rose-500,
   .bg-gradient-to-r.from-pink-500.to-rose-500:hover {
-    background-image: linear-gradient(to right, var(--theme-primary, #ec4899), var(--theme-accent, #f43f5e));
+    background-image: linear-gradient(to right, var(--theme-primary, #10b981), var(--theme-accent, #14b8a6));
   }
 
-  .bg-pink-500 { background-color: var(--theme-primary, #ec4899); }
-  .bg-pink-400 { background-color: var(--theme-primary, #f472b6); }
-  .hover\:bg-pink-500:hover { background-color: var(--theme-primary, #ec4899); }
-  .hover\:bg-pink-600:hover { background-color: var(--theme-primary, #db2777); }
+  .bg-pink-500 { background-color: var(--theme-primary, #10b981); }
+  .bg-pink-400 { background-color: var(--theme-primary, #34d399); }
+  .hover\:bg-pink-500:hover { background-color: var(--theme-primary, #10b981); }
+  .hover\:bg-pink-600:hover { background-color: var(--theme-primary, #059669); }
 
-  .from-pink-400 { --tw-gradient-from: var(--theme-primary, #f472b6) var(--tw-gradient-from-position, 0%); }
-  .from-pink-500 { --tw-gradient-from: var(--theme-primary, #ec4899) var(--tw-gradient-from-position, 0%); }
-  .to-rose-400 { --tw-gradient-to: var(--theme-accent, #fb7185) var(--tw-gradient-to-position, 100%); }
-  .to-rose-500 { --tw-gradient-to: var(--theme-accent, #f43f5e) var(--tw-gradient-to-position, 100%); }
-  .via-rose-500 { --tw-gradient-via: var(--theme-accent, #f43f5e) var(--tw-gradient-via-position, 50%); }
+  .from-pink-400 { --tw-gradient-from: var(--theme-primary, #34d399) var(--tw-gradient-from-position, 0%); }
+  .from-pink-500 { --tw-gradient-from: var(--theme-primary, #10b981) var(--tw-gradient-from-position, 0%); }
+  .to-rose-400 { --tw-gradient-to: var(--theme-accent, #2dd4bf) var(--tw-gradient-to-position, 100%); }
+  .to-rose-500 { --tw-gradient-to: var(--theme-accent, #14b8a6) var(--tw-gradient-to-position, 100%); }
+  .via-rose-500 { --tw-gradient-via: var(--theme-accent, #14b8a6) var(--tw-gradient-via-position, 50%); }
 
-  .bg-pink-500.text-white { background-color: var(--theme-primary, #ec4899); }
+  .bg-pink-500.text-white { background-color: var(--theme-primary, #10b981); }
 
-  .text-pink-500 { color: var(--theme-primary, #ec4899); }
-  .text-pink-600 { color: var(--theme-primary, #db2777); }
-  .text-pink-700 { color: var(--theme-primary, #be185d); }
+  .text-pink-500 { color: var(--theme-primary, #10b981); }
+  .text-pink-600 { color: var(--theme-primary, #059669); }
+  .text-pink-700 { color: var(--theme-primary, #047857); }
 
-  .border-pink-500 { border-color: var(--theme-primary, #ec4899); }
+  .border-pink-500 { border-color: var(--theme-primary, #10b981); }
 }
 
 /* ============================================================
@@ -230,13 +261,13 @@
   .app-shell {
     background-image:
       linear-gradient(rgba(255, 255, 255, var(--page-light)), rgba(255, 255, 255, var(--page-light))),
-      linear-gradient(rgba(44, 26, 38, var(--page-dark)), rgba(44, 26, 38, var(--page-dark)));
+      linear-gradient(rgba(6, 78, 59, var(--page-dark)), rgba(6, 78, 59, var(--page-dark)));
     backdrop-filter: blur(var(--blur-page)) saturate(1.4);
     -webkit-backdrop-filter: blur(var(--blur-page)) saturate(1.4);
     border: 1px solid rgba(255, 255, 255, 0.55);
     box-shadow:
-      0 18px 45px -12px rgba(90, 55, 75, 0.28),
-      0 4px 14px -6px rgba(90, 55, 75, 0.12),
+      0 18px 45px -12px rgba(6, 78, 59, 0.28),
+      0 4px 14px -6px rgba(6, 78, 59, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
@@ -246,7 +277,7 @@
     -webkit-backdrop-filter: blur(var(--blur-card));
     border: 1px solid rgba(255, 255, 255, 0.65);
     box-shadow:
-      0 12px 32px -10px rgba(90, 55, 75, 0.22),
+      0 12px 32px -10px rgba(6, 78, 59, 0.22),
       inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
@@ -258,7 +289,7 @@
   }
 
   /* ============================================================
-     NPURE SO-SPECIFIC GLASS VARIANTS
+     NPURE-SPECIFIC GLASS VARIANTS
      ============================================================ */
 
   /* Low stock alert — red tint (urgent) */
@@ -277,18 +308,18 @@
     -webkit-backdrop-filter: blur(var(--blur-mini));
   }
 
-  /* Focus product — purple-pink tint (highlight) */
+  /* Focus product — teal tint (highlight) */
   .glass-focus {
-    background: rgba(243, 232, 255, 0.45);
-    border: 1px solid rgba(216, 180, 254, 0.55);
+    background: rgba(240, 253, 250, 0.45);
+    border: 1px solid rgba(153, 246, 228, 0.55);
     backdrop-filter: blur(var(--blur-mini));
     -webkit-backdrop-filter: blur(var(--blur-mini));
   }
 
-  /* Sell-in transaction — emerald tint (incoming) */
+  /* Sell-in transaction — blue tint (incoming, NOT brand green) */
   .glass-sell-in {
-    background: rgba(236, 253, 245, 0.42);
-    border: 1px solid rgba(167, 243, 208, 0.55);
+    background: rgba(239, 246, 255, 0.42);
+    border: 1px solid rgba(191, 219, 254, 0.55);
     backdrop-filter: blur(var(--blur-mini));
     -webkit-backdrop-filter: blur(var(--blur-mini));
   }
@@ -314,9 +345,13 @@
     background: rgba(255, 255, 255, 0.50);
     backdrop-filter: blur(var(--blur-input));
     -webkit-backdrop-filter: blur(var(--blur-input));
-    border: 1px solid rgba(220, 180, 200, 0.55);
-    color: #52404d;
+    border: 1px solid rgba(167, 243, 208, 0.55);
+    color: #064e3b;
     transition: all 0.2s ease;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .custom-input:focus {
@@ -326,22 +361,34 @@
     outline: none;
   }
 
+  /* iOS date input overflow fix */
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.2em;
+  }
+
   select.is-placeholder {
-    color: rgba(131, 24, 67, 0.45) !important;
+    color: rgba(6, 78, 59, 0.45) !important;
     font-style: italic !important;
     font-weight: 400 !important;
   }
 
-  /* Floating glass navbar — bottom nav (iOS tab bar style) */
+  /* Floating glass navbar — bottom nav (iOS floating tab bar style) */
   .glass-nav {
-    background: rgba(255, 255, 255, 0.30);
-    -webkit-backdrop-filter: blur(var(--blur-nav)) saturate(1.7);
-    backdrop-filter: blur(var(--blur-nav)) saturate(1.7);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(var(--blur-nav)) saturate(1.8);
+    backdrop-filter: blur(var(--blur-nav)) saturate(1.8);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 1.5rem;
     box-shadow:
-      0 16px 38px -14px rgba(131, 24, 67, 0.35),
-      0 4px 14px -8px rgba(131, 24, 67, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      0 12px 32px -8px rgba(6, 78, 59, 0.28),
+      0 4px 12px -4px rgba(6, 78, 59, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
   /* Top navigation bar */
@@ -379,9 +426,9 @@
     opacity: 1;
     background: linear-gradient(
       165deg,
-      rgba(255, 246, 250, 0.35) 0%,
-      rgba(255, 246, 250, 0.15) 42%,
-      rgba(216, 176, 192, 0.25) 100%
+      rgba(236, 253, 245, 0.35) 0%,
+      rgba(236, 253, 245, 0.15) 42%,
+      rgba(153, 246, 228, 0.25) 100%
     );
   }
 
@@ -394,23 +441,23 @@
         color-mix(in srgb, var(--theme-primary) 85%, white),
         color-mix(in srgb, var(--theme-accent) 85%, white));
     border: 1px solid rgba(255, 255, 255, 0.30);
-    box-shadow: 0 18px 45px -12px rgba(90, 55, 75, 0.28);
+    box-shadow: 0 18px 45px -12px rgba(6, 78, 59, 0.28);
   }
 
   /* Modal glass transparent backdrop */
   .glass-modal-backdrop {
-    background: rgba(70, 35, 55, 0.35);
+    background: rgba(6, 78, 59, 0.35);
     -webkit-backdrop-filter: blur(7px) saturate(1.3);
     backdrop-filter: blur(7px) saturate(1.3);
   }
 
   .glass-modal-card {
-    background: rgba(255, 248, 251, 0.40);
+    background: rgba(240, 253, 245, 0.40);
     -webkit-backdrop-filter: blur(18px) saturate(1.6);
     backdrop-filter: blur(18px) saturate(1.6);
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow:
-      0 20px 50px -15px rgba(70, 35, 55, 0.40),
+      0 20px 50px -15px rgba(6, 78, 59, 0.40),
       inset 0 1px 0 rgba(255, 255, 255, 0.85);
   }
 
@@ -488,19 +535,19 @@
     background: rgba(255, 255, 255, 0.7);
   }
 
-  /* Receipt paper — print-friendly */
+  /* Receipt paper — print-friendly (green theme) */
   .receipt-paper {
-    background: #FFF8F5;
-    color: #4c1d36;
+    background: #f0fdf4;
+    color: #064e3b;
     font-family: 'Courier New', monospace;
-    border: 1px solid rgba(255, 200, 215, 0.6);
-    box-shadow: 0 4px 20px rgba(70, 35, 55, 0.15);
+    border: 1px solid rgba(167, 243, 208, 0.6);
+    box-shadow: 0 4px 20px rgba(6, 78, 59, 0.15);
   }
 
   /* Tear line for receipt */
   .receipt-tear-line {
     border: none;
-    border-top: 2px dashed rgba(131, 24, 67, 0.3);
+    border-top: 2px dashed rgba(6, 78, 59, 0.3);
     margin: 12px 0;
     position: relative;
   }
@@ -511,9 +558,9 @@
     top: -10px;
     left: 50%;
     transform: translateX(-50%);
-    background: #FFF8F5;
+    background: #f0fdf4;
     padding: 0 8px;
-    color: rgba(131, 24, 67, 0.5);
+    color: rgba(6, 78, 59, 0.5);
     font-size: 14px;
   }
 }
@@ -563,7 +610,7 @@
 
 @keyframes pulseGlow {
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.7)); }
-  50% { transform: scale(1.06); filter: drop-shadow(0 0 25px rgba(255, 192, 203, 0.9)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 25px rgba(52, 211, 153, 0.9)); }
 }
 
 .animate-glow-elephant {
@@ -580,7 +627,7 @@
   animation: shake 0.35s ease-in-out;
 }
 
-/* Spotlight Moving Effect — subtle depth layer */
+/* Spotlight Moving Effect — subtle green depth layer */
 body::after {
   content: '';
   position: fixed;
@@ -588,7 +635,7 @@ body::after {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 40%);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
   z-index: -1;
   animation: spotlightMove 15s linear infinite;
   pointer-events: none;
@@ -659,14 +706,14 @@ body::after {
     from var(--modal-angle),
     transparent 0deg,
     transparent 15deg,
-    rgba(236, 72, 153, 0.9) 40deg,
+    rgba(16, 185, 129, 0.9) 40deg,
     #ffffff 50deg,
-    rgba(244, 63, 94, 0.9) 60deg,
+    rgba(20, 184, 166, 0.9) 60deg,
     transparent 85deg,
     transparent 195deg,
-    rgba(236, 72, 153, 0.9) 220deg,
+    rgba(16, 185, 129, 0.9) 220deg,
     #ffffff 230deg,
-    rgba(244, 63, 94, 0.9) 240deg,
+    rgba(20, 184, 166, 0.9) 240deg,
     transparent 265deg,
     transparent 360deg
   );
@@ -691,11 +738,11 @@ body::after {
 @keyframes floatGlow {
   0%, 100% {
     transform: translateY(0px) scale(1);
-    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.3));
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.3));
   }
   50% {
     transform: translateY(-8px) scale(1.03);
-    filter: drop-shadow(0 0 25px rgba(236, 72, 153, 0.5));
+    filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.5));
   }
 }
 
@@ -733,7 +780,7 @@ body::after {
 }
 
 /* ============================================================
-   END — NPURE SO Global Stylesheet
+   END — NPURE Global Stylesheet (Green Theme)
    ============================================================
    This file should be placed at: src/app/globals.css
    in the Next.js project root.
