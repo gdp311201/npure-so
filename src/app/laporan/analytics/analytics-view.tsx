@@ -2,27 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts'
 import { formatRupiah, BULAN_LIST, getCurrentMonth, getCurrentYear, getTodayISO, getTahunListDynamic } from '@/lib/utils/format'
 
 interface AnalyticsData {
   overview: { total_qty: number; total_customer: number; gross_omset: number; net_omset: number; target_omset: number; achievement_pct: number }
   top_sellers: Array<{ name: string; qty: number; omset: number }>
   slow_movers: Array<{ name: string; qty: number; omset: number }>
-  daily_trend: Array<{ date: string; qty: number; omset: number; customer: number }>
+  weekday_summary: Array<{ day: string; avg_qty: number; total_qty: number; days_active: number }>
   turnover: Array<{ name: string; stock_awal: number; sold: number; incoming: number; current_stock: number; turnover_pct: number; status: string }>
   restock_alert: Array<{ name: string; current_stock: number; sold: number; incoming: number }>
   period_label: string
-}
-
-const CHART_AXIS = { fill: '#ecfdf5', fontSize: 10 }
-const CHART_GRID = 'rgba(255,255,255,0.06)'
-const TOOLTIP_STYLE = {
-  background: 'rgba(6, 78, 59, 0.95)',
-  border: '1px solid rgba(52, 211, 153, 0.3)',
-  borderRadius: '8px',
-  fontSize: '11px',
-  color: '#ecfdf5',
 }
 
 export default function AnalyticsView({ data, mode, searchParams }: { data: AnalyticsData; mode: string; searchParams: any }) {
@@ -43,6 +32,7 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
 
   const turnoverColors: Record<string, string> = { fast: '#ef4444', healthy: '#10b981', slow: '#f59e0b', dead: '#6b7280' }
   const turnoverLabels: Record<string, string> = { fast: '⚡ Cepat Habis', healthy: '✅ Sehat', slow: '🐢 Lambat', dead: '💀 Dead Stock' }
+  const medals = ['🥇', '🥈', '🥉']
 
   return (
     <div className="space-y-4">
@@ -73,7 +63,6 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         <button onClick={handleShow} className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-2 px-4 rounded-lg text-xs">📊 Tampilkan Analytics</button>
       </div>
 
-      {/* Period Label */}
       <div className="text-center"><p className="text-xs font-bold text-pink-950">{data.period_label}</p></div>
 
       {/* Overview */}
@@ -99,51 +88,86 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         </div>
       </div>
 
-      {/* Top 10 Sellers */}
+      {/* Top 10 Sellers — Ranked List with CSS Progress Bars */}
       {data.top_sellers.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
           <h3 className="text-xs font-bold text-pink-950 mb-3">🏆 Top 10 Sellers (by Qty)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart layout="vertical" data={data.top_sellers} margin={{ left: 0, right: 10 }}>
-              <CartesianGrid horizontal={false} stroke={CHART_GRID} />
-              <XAxis type="number" tick={CHART_AXIS} axisLine={{ stroke: CHART_GRID }} />
-              <YAxis type="category" dataKey="name" tick={{ ...CHART_AXIS, fontSize: 9 }} axisLine={{ stroke: CHART_GRID }} width={130} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(v: any, n: string) => n === 'qty' ? [`${v} pcs`, 'Qty'] : [formatRupiah(Number(v)), 'Omset']} />
-              <Bar dataKey="qty" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="space-y-2.5">
+            {data.top_sellers.map((seller, i) => {
+              const maxQty = data.top_sellers[0]?.qty || 1
+              const barWidth = Math.max((seller.qty / maxQty) * 100, 5)
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-sm flex-shrink-0 w-6 text-center">{medals[i] || `${i + 1}`}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] font-medium text-pink-950 truncate pr-2">{seller.name}</span>
+                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap">{seller.qty} pcs</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-pink-950/10 overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500" style={{ width: `${barWidth}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
-      {/* Slow Movers */}
+      {/* Slow Movers — Simple List */}
       {data.slow_movers.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
           <h3 className="text-xs font-bold text-pink-950 mb-3">🐢 Slow Movers (Bottom 10)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart layout="vertical" data={data.slow_movers} margin={{ left: 0, right: 10 }}>
-              <CartesianGrid horizontal={false} stroke={CHART_GRID} />
-              <XAxis type="number" tick={CHART_AXIS} axisLine={{ stroke: CHART_GRID }} />
-              <YAxis type="category" dataKey="name" tick={{ ...CHART_AXIS, fontSize: 9 }} axisLine={{ stroke: CHART_GRID }} width={130} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(v: any) => [`${v} pcs`, 'Qty']} />
-              <Bar dataKey="qty" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="space-y-1">
+            {data.slow_movers.map((mover, i) => (
+              <div key={i} className="flex items-center justify-between text-[10px] py-1 border-b border-pink-100/20">
+                <span className="text-pink-700/60 flex-shrink-0 mr-2 w-4">{i + 1}</span>
+                <span className="text-pink-950 flex-1 truncate pr-2">{mover.name}</span>
+                <span className="font-bold text-amber-400 whitespace-nowrap">{mover.qty} pcs</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Daily Trend */}
-      {data.daily_trend.length > 0 && (
+      {/* Weekday Summary — Average Sellout per Weekday */}
+      {data.weekday_summary.length > 0 && (
         <div className="glass-card rounded-2xl p-4">
-          <h3 className="text-xs font-bold text-pink-950 mb-3">📅 Daily Sell-Out Trend</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.daily_trend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-              <CartesianGrid vertical={false} stroke={CHART_GRID} />
-              <XAxis dataKey="date" tick={{ ...CHART_AXIS, fontSize: 8 }} axisLine={{ stroke: CHART_GRID }} interval={0} angle={-45} textAnchor="end" height={50} />
-              <YAxis tick={CHART_AXIS} axisLine={{ stroke: CHART_GRID }} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(255,255,255,0.05)' }} formatter={(v: any, n: string) => n === 'qty' ? [`${v} pcs`, 'Qty'] : n === 'omset' ? [formatRupiah(Number(v)), 'Omset'] : [`${v}`, 'Customer']} />
-              <Bar dataKey="qty" fill="#34d399" radius={[4, 4, 0, 0]} barSize={16} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="text-xs font-bold text-pink-950 mb-3">📅 Sell-Out by Weekday (Average)</h3>
+          <div className="space-y-2.5">
+            {data.weekday_summary.map((wd, i) => {
+              const maxAvg = data.weekday_summary[0]?.avg_qty || 1
+              const barWidth = Math.max((wd.avg_qty / maxAvg) * 100, 5)
+              const isPeak = i === 0
+              const isLow = i === data.weekday_summary.length - 1
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold w-14 flex-shrink-0 ${isPeak ? 'text-emerald-400' : isLow ? 'text-rose-400' : 'text-pink-950'}`}>
+                    {wd.day}
+                  </span>
+                  <div className="flex-1">
+                    <div className="h-3 rounded-full bg-pink-950/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${isPeak ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : isLow ? 'bg-rose-500' : 'bg-gradient-to-r from-teal-600 to-teal-500'}`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap w-20 text-right">
+                    avg {wd.avg_qty} pcs
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex justify-between mt-2 pt-2 border-t border-pink-100/20">
+            <p className="text-[9px] text-emerald-400">📈 Peak: {data.weekday_summary[0]?.day}</p>
+            <p className="text-[9px] text-rose-400">📉 Lowest: {data.weekday_summary[data.weekday_summary.length - 1]?.day}</p>
+          </div>
+          <p className="text-[8px] text-pink-700/40 mt-1">
+            Berdasarkan {data.weekday_summary.reduce((s, d) => s + d.days_active, 0)} hari penjualan dalam periode ini
+          </p>
         </div>
       )}
 
@@ -183,7 +207,6 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
         </div>
       )}
 
-      {/* Empty state */}
       {data.top_sellers.length === 0 && (
         <div className="glass-card rounded-2xl p-6 text-center">
           <div className="text-3xl mb-2 opacity-50">📊</div>
