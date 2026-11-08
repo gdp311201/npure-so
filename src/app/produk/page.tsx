@@ -1,15 +1,18 @@
+import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/layout/app-shell'
+import ProdukManager from './produk-manager'
 
 export default async function ProdukPage() {
+  const supabase = await createClient()
+
+  const { data: products } = await supabase
+    .from('v_product_summary')
+    .select('id, name, is_active, current_price, current_stock, stock_status, low_stock_threshold')
+    .order('name')
+
   return (
     <AppShell title="Produk">
-      <div className="glass-card rounded-2xl p-6 text-center">
-        <div className="text-4xl mb-3">📦</div>
-        <h2 className="text-lg font-bold text-pink-950">Produk</h2>
-        <p className="text-sm text-pink-800/70 mt-1">
-          Master produk dengan toggle Aktif/Semua akan dibangun di sini.
-        </p>
-      </div>
+      <ProdukManager products={products || []} />
     </AppShell>
   )
 }
