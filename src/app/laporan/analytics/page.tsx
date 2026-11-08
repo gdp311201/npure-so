@@ -90,17 +90,17 @@ export default async function AnalyticsPage({
   adjustTx?.forEach(tx => sellInMap.set(tx.product_id, (sellInMap.get(tx.product_id) || 0) + tx.qty))
 
   const topSellers = Array.from(sellOutMap.values()).sort((a, b) => b.qty - a.qty).slice(0, 10)
-    .map(s => ({ name: s.name.length > 28 ? s.name.slice(0, 28) + '...' : s.name, qty: s.qty, omset: s.omset }))
+    .map(s => ({ name: s.name, qty: s.qty, omset: s.omset }))
 
   const slowMovers = Array.from(sellOutMap.values()).filter(s => s.qty > 0).sort((a, b) => a.qty - b.qty).slice(0, 10)
-    .map(s => ({ name: s.name.length > 28 ? s.name.slice(0, 28) + '...' : s.name, qty: s.qty, omset: s.omset }))
+    .map(s => ({ name: s.name, qty: s.qty, omset: s.omset }))
 
   // DEMAND CONSISTENCY — sell frequency per product
   const demandConsistency = Array.from(sellOutMap.entries())
     .map(([id, data]) => {
       const daysSold = sellOutDatesMap.get(id)?.size || 0
       return {
-        name: data.name.length > 28 ? data.name.slice(0, 28) + '...' : data.name,
+        name: data.name,
         days_sold: daysSold,
         total_qty: data.qty,
         avg_per_day: daysSold > 0 ? Math.round((data.qty / daysSold) * 10) / 10 : 0,
