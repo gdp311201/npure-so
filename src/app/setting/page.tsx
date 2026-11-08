@@ -4,17 +4,25 @@ import AppShell from '@/components/layout/app-shell'
 import LogoutButton from '@/components/auth/logout-button'
 import MonthlyConfigSection from './monthly-config-section'
 import FocusProductsSection from './focus-products-section'
+import MonthNavigator from './month-navigator'
+import { getCurrentMonth, getCurrentYear } from '@/lib/utils/format'
 
-export default async function SettingPage() {
+export default async function SettingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string; year?: string }>
+}) {
+  const params = await searchParams
+  const month = params.month ? Number(params.month) : getCurrentMonth()
+  const year = params.year ? Number(params.year) : getCurrentYear()
+  const period = `${year}-${String(month).padStart(2, '0')}`
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
   }
-
-  const jakartaDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
-  const currentMonth = jakartaDate.slice(0, 7)
 
   const [
     { data: profile },
@@ -23,8 +31,8 @@ export default async function SettingPage() {
     { data: allProducts },
   ] = await Promise.all([
     supabase.from('profiles').select('full_name, email, role').eq('id', user.id).single(),
-    supabase.from('monthly_config').select('period, discount_rate, target_omset').eq('period', currentMonth).single(),
-    supabase.from('v_focus_progress').select('*').eq('period', currentMonth),
+    supabase.from('monthly_config').select('period, discount_rate, target_omset').eq('period', period).single(),
+    supabase.from('v_focus_progress').select('*').eq('period', period),
     supabase.from('v_product_summary').select('id, name').eq('is_active', true).order('name'),
   ])
 
@@ -52,14 +60,21 @@ export default async function SettingPage() {
           </div>
         </div>
 
-        {/* Monthly Config */}
-        <MonthlyConfigSection config={monthlyConfig} userRole={profile?.role || 'staff'} />
+        {/* Month Navigator — controls both sections below */}
+        <MonthNavigator currentMonth={month} currentYear={year} />
 
-        {/* Focus Products */}
+        {/* Monthly Config for selected period */}
+        <MonthlyConfigSection
+          config={monthlyConfig}
+          userRole={profile?.role || 'staff'}
+          period={period}
+        />
+
+        {/* Focus Products for selected period */}
         <FocusProductsSection
           focusProducts={focusProducts || []}
           allProducts={allProducts || []}
-          defaultPeriod={currentMonth}
+          period={period}
         />
 
         {/* Logout */}
