@@ -4,7 +4,7 @@
    Project    : NPURE Stock Opname System
    Stack      : Next.js 15 + Tailwind v4 + shadcn/ui
    Theme      : Dark Glassmorphism, Emerald-Teal, Premium
-   Updated    : 2026-11-09 — Receipt fix + all polish
+   Updated    : 2026-11-09 — Receipt text fully fixed
    ============================================================ */
 
 @import "tailwindcss";
@@ -242,19 +242,34 @@
   /* Borders — light green (NOT dark/inverted) */
   .receipt-paper .border-pink-200 { border-color: #a7f3d0 !important; }
   .receipt-paper .border-pink-200\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
-  .receipt-paper .border-pink-300 { border-color: #6ee7b7 !important; }
-
-  /* Also override the global border-pink overrides within receipt */
-  .receipt-paper .border-pink-200\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
   .receipt-paper .border-pink-200\/50 { border-color: rgba(167, 243, 208, 0.5) !important; }
+  .receipt-paper .border-pink-300 { border-color: #6ee7b7 !important; }
   .receipt-paper .border-pink-100\/40 { border-color: rgba(209, 250, 229, 0.4) !important; }
 
-  /* Gray text — force dark (Tailwind default gray might be light in dark theme) */
+  /* Gray text — force dark (visible on light receipt bg) */
+  .receipt-paper .text-gray-400 { color: #9ca3af !important; }
+  .receipt-paper .text-gray-500 { color: #6b7280 !important; }
   .receipt-paper .text-gray-600 { color: #4b5563 !important; }
   .receipt-paper .text-gray-700 { color: #374151 !important; }
   .receipt-paper .text-gray-800 { color: #1f2937 !important; }
-  .receipt-paper .text-gray-500 { color: #6b7280 !important; }
-  .receipt-paper .text-gray-400 { color: #9ca3af !important; }
+  .receipt-paper .text-gray-900 { color: #111827 !important; }
+
+  /* Emerald — force original dark green (visible on light bg) */
+  .receipt-paper .text-emerald-400 { color: #34d399 !important; }
+  .receipt-paper .text-emerald-500 { color: #10b981 !important; }
+  .receipt-paper .text-emerald-600 { color: #059669 !important; }
+  .receipt-paper .text-emerald-700 { color: #047857 !important; }
+
+  /* Violet — keep original (visible on light bg) */
+  .receipt-paper .text-violet-600 { color: #7c3aed !important; }
+
+  /* Amber — keep original (visible on light bg) */
+  .receipt-paper .text-amber-600 { color: #d97706 !important; }
+  .receipt-paper .text-amber-800 { color: #92400e !important; }
+
+  /* Slate — force dark (for hidden product text) */
+  .receipt-paper .text-slate-500 { color: #64748b !important; }
+  .receipt-paper .text-slate-600 { color: #475569 !important; }
 }
 
 /* ============================================================
