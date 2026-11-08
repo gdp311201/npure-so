@@ -4,16 +4,7 @@
    Project    : NPURE Stock Opname System
    Stack      : Next.js 15 + Tailwind v4 + shadcn/ui
    Theme      : Dark Glassmorphism, Emerald-Teal, Premium
-   Updated    : 2026-11-08 — Dark theme overhaul
-   ============================================================
-
-   DARK THEME APPROACH:
-   - Background: very dark (wallpaper barely visible)
-   - Glass cards: dark semi-transparent (frosted dark glass)
-   - Text: LIGHT everywhere (inverted pink scale)
-   - Pink color scale INVERTED: dark shades → light, light shades → dark
-   - This allows all component files to work WITHOUT changes
-   - Nav bar: floating with subtle glow animation
+   Updated    : 2026-11-09 — Receipt fix + all polish
    ============================================================ */
 
 @import "tailwindcss";
@@ -63,11 +54,7 @@
   --color-theme-primary: var(--theme-primary);
   --color-theme-accent: var(--theme-accent);
 
-  /* ============================================================
-     PINK → EMERALD (INVERTED for dark theme)
-     Light shades become DARK, dark shades become LIGHT
-     pink-500 stays as brand primary
-     ============================================================ */
+  /* PINK → EMERALD (INVERTED for dark theme) */
   --color-pink-50: #022c22;
   --color-pink-100: #064e3b;
   --color-pink-200: #065f46;
@@ -128,9 +115,6 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* ============================================================
-     GLASSMORPHISM TUNING — DARK THEME
-     ============================================================ */
   --blur-wallpaper: 0px;
   --blur-lockscreen: 1.8px;
   --dim-lockscreen: 0.85;
@@ -148,14 +132,12 @@
   --wallpaper-motion: wallpaper-kenburns;
   --wallpaper-motion-speed: 45s;
 
-  /* NPURE brand — GREEN theme (locked) */
   --theme-primary: #10b981;
   --theme-accent: #34d399;
   --theme-gradient-1: #064e3b;
   --theme-gradient-2: #047857;
   --theme-gradient-3: #065f46;
 
-  /* Wallpaper */
   --theme-wallpaper: url('https://foiteplkbfwwjshykpgj.supabase.co/storage/v1/object/public/npure-assets/wallpaper.jpg');
 }
 
@@ -177,7 +159,7 @@
 }
 
 /* ============================================================
-   THEME-AWARE COLOR OVERRIDES
+   THEME-AWARE COLOR OVERRIDES + RECEIPT FIX + BUTTON POLISH
    ============================================================ */
 @layer utilities {
   .bg-gradient-to-r.from-pink-400.to-rose-400,
@@ -208,25 +190,64 @@
 
   .border-pink-500 { border-color: var(--theme-primary, #10b981); }
 
-  /* ============================================================
-     DARK THEME BUTTON OVERRIDES — premium dark glass + neon glow
-     ============================================================ */
-
-  /* Semi-transparent white → dark glass (toggles, tabs, cancel buttons) */
+  /* DARK THEME BUTTON OVERRIDES */
   .bg-white\/60 { background: rgba(255, 255, 255, 0.06) !important; }
   .bg-white\/80 { background: rgba(255, 255, 255, 0.08) !important; }
   .hover\:bg-white\/80:hover { background: rgba(255, 255, 255, 0.12) !important; }
   .hover\:bg-white\/60:hover { background: rgba(255, 255, 255, 0.10) !important; }
 
-  /* Pink borders → subtle white borders (visible on dark) */
   .border-pink-200\/60 { border-color: rgba(255, 255, 255, 0.10) !important; }
   .border-pink-200\/50 { border-color: rgba(255, 255, 255, 0.08) !important; }
   .border-pink-100\/40 { border-color: rgba(255, 255, 255, 0.06) !important; }
 
-  /* Gradient buttons — neon green glow (active tabs, save buttons, etc.) */
   [class*="from-pink-"][class*="to-rose-"] {
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   }
+
+  /* ============================================================
+     RECEIPT PAPER — FORCE LIGHT THEME (override ALL dark inversions)
+     Highest priority in @layer utilities with !important
+     Receipt must stay: light bg + dark text for PNG export
+     ============================================================ */
+
+  /* Backgrounds — light green (NOT dark/inverted) */
+  .receipt-paper .bg-pink-50 { background: #ecfdf5 !important; }
+  .receipt-paper .bg-pink-50\/60 { background: rgba(236, 253, 245, 0.6) !important; }
+  .receipt-paper .bg-pink-100 { background: #d1fae5 !important; }
+  .receipt-paper .bg-pink-100\/70 { background: rgba(209, 250, 229, 0.7) !important; }
+
+  /* Text — dark green (NOT light/inverted) */
+  .receipt-paper .text-pink-400 { color: #34d399 !important; }
+  .receipt-paper .text-pink-500 { color: #10b981 !important; }
+  .receipt-paper .text-pink-600 { color: #059669 !important; }
+  .receipt-paper .text-pink-700 { color: #047857 !important; }
+  .receipt-paper .text-pink-700\/70 { color: rgba(4, 120, 87, 0.7) !important; }
+  .receipt-paper .text-pink-700\/60 { color: rgba(4, 120, 87, 0.6) !important; }
+  .receipt-paper .text-pink-800 { color: #065f46 !important; }
+  .receipt-paper .text-pink-900 { color: #064e3b !important; }
+  .receipt-paper .text-pink-950 { color: #022c22 !important; }
+
+  /* Rose — original red (NOT teal/inverted) */
+  .receipt-paper .text-rose-600 { color: #e11d48 !important; }
+  .receipt-paper .text-rose-500 { color: #f43f5e !important; }
+  .receipt-paper .text-rose-700 { color: #be123c !important; }
+
+  /* White text → dark green (readable on light bg) */
+  .receipt-paper .text-white { color: #064e3b !important; }
+  .receipt-paper .text-white\/90 { color: #064e3b !important; }
+  .receipt-paper .text-white\/80 { color: #064e3b !important; }
+  .receipt-paper .text-white\/70 { color: #064e3b !important; }
+  .receipt-paper .text-white\/60 { color: #064e3b !important; }
+
+  /* Borders — light green (NOT dark/inverted) */
+  .receipt-paper .border-pink-200 { border-color: #a7f3d0 !important; }
+  .receipt-paper .border-pink-200\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
+  .receipt-paper .border-pink-300 { border-color: #6ee7b7 !important; }
+
+  /* Also override the global border-pink overrides within receipt */
+  .receipt-paper .border-pink-200\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
+  .receipt-paper .border-pink-200\/50 { border-color: rgba(167, 243, 208, 0.5) !important; }
+  .receipt-paper .border-pink-100\/40 { border-color: rgba(209, 250, 229, 0.4) !important; }
 }
 
 /* ============================================================
@@ -246,7 +267,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
-  /* Dark frosted glass card */
   .glass-card {
     background: rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(var(--blur-card));
@@ -264,7 +284,6 @@
     -webkit-backdrop-filter: blur(var(--blur-mini));
   }
 
-  /* NPURE-specific glass variants — dark theme */
   .glass-stock-low {
     background: rgba(127, 29, 29, 0.25);
     border: 1px solid rgba(252, 165, 165, 0.20);
@@ -307,7 +326,6 @@
     -webkit-backdrop-filter: blur(var(--blur-mini));
   }
 
-  /* Custom inputs — dark theme */
   .custom-input {
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(var(--blur-input));
@@ -356,7 +374,6 @@
     color: #ecfdf5;
   }
 
-  /* Floating glass navbar — with glow animation */
   .glass-nav {
     background: rgba(255, 255, 255, 0.10);
     -webkit-backdrop-filter: blur(var(--blur-nav)) saturate(1.8);
@@ -375,7 +392,6 @@
     50% { transform: translateY(-2px); }
   }
 
-  /* Top navigation bar — dark */
   .glass-nav-top {
     background: rgba(255, 255, 255, 0.06);
     -webkit-backdrop-filter: blur(var(--blur-nav)) saturate(1.5);
@@ -383,7 +399,6 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  /* Wallpaper — dark, barely visible */
   .wallpaper-bg {
     position: fixed;
     inset: -40px;
@@ -402,7 +417,6 @@
     will-change: transform;
   }
 
-  /* Dark green veil — makes background barely visible */
   .wallpaper-veil {
     position: fixed;
     inset: 0;
@@ -416,7 +430,7 @@
       rgba(4, 47, 46, 0.65) 100%
     );
   }
-  /* Asset card — premium dark glass with neon green glow */
+
   .asset-card {
     position: relative;
     overflow: hidden;
@@ -431,7 +445,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
-  /* Modal — dark glass */
   .glass-modal-backdrop {
     background: rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(7px) saturate(1.3);
@@ -448,7 +461,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
 
-  /* Live clock pulse dot */
   .live-dot {
     display: inline-block;
     width: 7px;
@@ -460,7 +472,6 @@
     animation: livePulse 1.8s ease-out infinite;
   }
 
-  /* Bottom nav badge */
   .nav-badge {
     position: absolute;
     top: -4px;
@@ -480,7 +491,6 @@
     animation: badgePulse 2s ease-in-out infinite;
   }
 
-  /* Hidden product card */
   .product-card-hidden {
     opacity: 0.4;
     background: rgba(255, 255, 255, 0.03);
@@ -492,7 +502,6 @@
     color: rgba(255, 255, 255, 0.3);
   }
 
-  /* Progress bar */
   .progress-bar-track {
     background: rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
@@ -508,7 +517,6 @@
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
   }
 
-  /* Quick action button */
   .quick-action-btn {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.10);
@@ -523,37 +531,13 @@
     background: rgba(255, 255, 255, 0.10);
   }
 
-  /* Receipt paper — KEEP LIGHT for PNG export */
+  /* Receipt paper — light bg + dark text (for PNG export) */
   .receipt-paper {
     background: #f0fdf4;
     color: #064e3b;
     font-family: 'Courier New', monospace;
     border: 1px solid rgba(167, 243, 208, 0.6);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    /* Override inverted color tokens — receipt must stay light theme */
-    --color-pink-50: #ecfdf5;
-    --color-pink-100: #d1fae5;
-    --color-pink-200: #a7f3d0;
-    --color-pink-300: #6ee7b7;
-    --color-pink-400: #34d399;
-    --color-pink-500: #10b981;
-    --color-pink-600: #059669;
-    --color-pink-700: #047857;
-    --color-pink-800: #065f46;
-    --color-pink-900: #064e3b;
-    --color-pink-950: #022c22;
-    --color-rose-400: #fb7185;
-    --color-rose-500: #f43f5e;
-    --color-rose-600: #e11d48;
-  }
-
-  /* White text inside receipt → dark green (readable on light bg) */
-  .receipt-paper .text-white,
-  .receipt-paper .text-white\/90,
-  .receipt-paper .text-white\/80,
-  .receipt-paper .text-white\/70,
-  .receipt-paper .text-white\/60 {
-    color: #064e3b !important;
   }
 
   .receipt-tear-line {
@@ -576,9 +560,7 @@
   }
 }
 
-/* ============================================================
-   KEYFRAME ANIMATIONS
-   ============================================================ */
+/* KEYFRAME ANIMATIONS */
 @keyframes wallpaper-kenburns {
   0%, 100% { transform: scale(1.05) translate(0%, 0%); }
   50%      { transform: scale(1.1) translate(1%, -0.8%); }
@@ -613,7 +595,6 @@
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
-/* Spotlight — green glow on dark bg */
 body::after {
   content: '';
   position: fixed;
@@ -635,7 +616,6 @@ body::after {
   100% { transform: translate(0%, 0%); }
 }
 
-/* Premium sweep */
 .premium-sweep-wrapper { position: relative; }
 
 .premium-sweep {
@@ -663,7 +643,6 @@ body::after {
   100% { transform: translateX(100%) rotate(0deg); }
 }
 
-/* Rotating modal border */
 @property --modal-angle {
   syntax: '<angle>';
   initial-value: 0deg;
@@ -686,7 +665,6 @@ body::after {
 
 @keyframes rotateModalAngle { to { --modal-angle: 360deg; } }
 
-/* Mascot glow */
 .mascot-float-glow {
   animation: floatGlow 4s ease-in-out infinite;
 }
@@ -696,14 +674,12 @@ body::after {
   50% { transform: translateY(-8px) scale(1.03); filter: drop-shadow(0 0 25px rgba(16, 185, 129, 0.6)); }
 }
 
-/* Print */
 @media print {
   .wallpaper-bg, .wallpaper-veil, .glass-nav, .glass-nav-top, body::after { display: none !important; }
   body { background: white !important; }
   .receipt-paper { box-shadow: none !important; border: none !important; }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .wallpaper-bg { animation: none; }
   .premium-sweep { display: none; }
