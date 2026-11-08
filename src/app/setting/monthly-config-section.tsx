@@ -14,9 +14,11 @@ interface MonthlyConfig {
 export default function MonthlyConfigSection({
   config,
   userRole,
+  period,
 }: {
   config: MonthlyConfig | null
   userRole: string
+  period: string
 }) {
   const [editing, setEditing] = useState(false)
   const [discountRate, setDiscountRate] = useState(
@@ -30,13 +32,8 @@ export default function MonthlyConfigSection({
   const router = useRouter()
 
   const isAdmin = userRole === 'admin'
-  const currentMonth = new Date()
-    .toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
-    .slice(0, 7)
-  const monthDisplay = new Date().toLocaleDateString('id-ID', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'Asia/Jakarta',
+  const monthDisplay = new Date(period + '-01T00:00:00').toLocaleDateString('id-ID', {
+    month: 'long', year: 'numeric',
   })
 
   async function handleSave() {
@@ -57,13 +54,13 @@ export default function MonthlyConfigSection({
         const { error: updateError } = await supabase
           .from('monthly_config')
           .update(updateData)
-          .eq('period', currentMonth)
+          .eq('period', period)
         if (updateError) throw new Error(updateError.message)
       } else {
         const { error: insertError } = await supabase
           .from('monthly_config')
           .insert({
-            period: currentMonth,
+            period: period,
             discount_rate: isAdmin ? rate : 0.25,
             target_omset: target,
             created_by: user.id,
@@ -88,6 +85,12 @@ export default function MonthlyConfigSection({
           {monthDisplay}
         </span>
       </div>
+
+      {!config && !editing && (
+        <div className="bg-amber-50/80 border border-amber-200/60 rounded-lg p-2 text-center">
+          <p className="text-[10px] text-amber-800 font-bold">⚠ Belum dikonfigurasi untuk periode ini</p>
+        </div>
+      )}
 
       {!editing ? (
         <div className="space-y-2">
