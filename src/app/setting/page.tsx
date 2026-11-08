@@ -1,21 +1,37 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import AppShell from '@/components/layout/app-shell'
 import LogoutButton from '@/components/auth/logout-button'
+import MonthlyConfigSection from './monthly-config-section'
+import FocusProductsSection from './focus-products-section'
 
 export default async function SettingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email, role')
-    .eq('id', user!.id)
-    .single()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const jakartaDate = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Jakarta' })
+  const currentMonth = jakartaDate.slice(0, 7)
+
+  const [
+    { data: profile },
+    { data: monthlyConfig },
+    { data: focusProducts },
+    { data: allProducts },
+  ] = await Promise.all([
+    supabase.from('profiles').select('full_name, email, role').eq('id', user.id).single(),
+    supabase.from('monthly_config').select('period, discount_rate, target_omset').eq('period', currentMonth).single(),
+    supabase.from('v_focus_progress').select('*').eq('period', currentMonth),
+    supabase.from('v_product_summary').select('id, name').eq('is_active', true).order('name'),
+  ])
 
   return (
     <AppShell title="Setting">
       <div className="space-y-4">
-        {/* Profile card */}
+        {/* Profile */}
         <div className="glass-card rounded-2xl p-5">
           <h3 className="text-xs font-bold uppercase text-pink-900/70 mb-3">👤 Profile</h3>
           <div className="space-y-2">
@@ -36,20 +52,15 @@ export default async function SettingPage() {
           </div>
         </div>
 
-        {/* Config placeholders */}
-        <div className="glass-card rounded-2xl p-5">
-          <h3 className="text-xs font-bold uppercase text-pink-900/70 mb-3">⚙️ Konfigurasi</h3>
-          <div className="space-y-2">
-            <div className="glass-mini rounded-xl p-3 flex justify-between items-center">
-              <span className="text-sm text-pink-950">📅 Monthly Config</span>
-              <span className="text-[10px] text-pink-700/50">Coming soon</span>
-            </div>
-            <div className="glass-mini rounded-xl p-3 flex justify-between items-center">
-              <span className="text-sm text-pink-950">🌟 Focus Products</span>
-              <span className="text-[10px] text-pink-700/50">Coming soon</span>
-            </div>
-          </div>
-        </div>
+        {/* Monthly Config */}
+        <MonthlyConfigSection config={monthlyConfig} userRole={profile?.role || 'staff'} />
+
+        {/* Focus Products */}
+        <FocusProductsSection
+          focusProducts={focusProducts || []}
+          allProducts={allProducts || []}
+          defaultPeriod={currentMonth}
+        />
 
         {/* Logout */}
         <div className="pt-4">
