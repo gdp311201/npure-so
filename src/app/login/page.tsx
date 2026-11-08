@@ -22,7 +22,7 @@ export default async function LoginPage() {
             alt="NPURE SO"
             className="w-16 h-16 rounded-2xl mx-auto mb-3 mascot-float-glow object-cover shadow-md"
           />
-          <h1 className="text-2xl font-bold text-pink-950 tracking-tight">NPURE SO</h1>
+          <h1 className="text-2xl font-bold text-pink-950 tracking-tight">NPURE</h1>
           <p className="text-sm text-pink-800/70 font-medium">Stock Opname System</p>
         </div>
         <LoginForm />
