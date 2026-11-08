@@ -123,7 +123,7 @@ export default async function EReceiptPage({
   }
 
   return (
-    <AppShell title="E-Receipt">
+    <AppShell title="E-Receipt" showBackButton backHref="/laporan">
       <EReceiptView
         data={receiptData}
         mode={mode}
