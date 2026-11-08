@@ -96,12 +96,12 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
               const maxQty = data.top_sellers[0]?.qty || 1
               const barWidth = Math.max((seller.qty / maxQty) * 100, 5)
               return (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-sm flex-shrink-0 w-6 text-center">{medals[i] || `${i + 1}`}</span>
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-sm flex-shrink-0 w-6 text-center leading-tight">{medals[i] || `${i + 1}`}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[10px] font-medium text-pink-950 truncate pr-2">{seller.name}</span>
-                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap">{seller.qty} pcs</span>
+                    <div className="flex items-start justify-between mb-0.5">
+                      <span className="text-[10px] font-medium text-pink-950 pr-2 leading-tight">{seller.name}</span>
+                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap flex-shrink-0">{seller.qty} pcs</span>
                     </div>
                     <div className="h-2 rounded-full bg-pink-950/10 overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500" style={{ width: `${barWidth}%` }} />
@@ -120,10 +120,10 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
           <h3 className="text-xs font-bold text-pink-950 mb-3">🐢 Slow Movers (Bottom 10)</h3>
           <div className="space-y-1">
             {data.slow_movers.map((mover, i) => (
-              <div key={i} className="flex items-center justify-between text-[10px] py-1 border-b border-pink-100/20">
-                <span className="text-pink-700/60 flex-shrink-0 mr-2 w-4">{i + 1}</span>
-                <span className="text-pink-950 flex-1 truncate pr-2">{mover.name}</span>
-                <span className="font-bold text-amber-400 whitespace-nowrap">{mover.qty} pcs</span>
+              <div key={i} className="flex items-start justify-between text-[10px] py-1 border-b border-pink-100/20">
+                <span className="text-pink-700/60 flex-shrink-0 mr-2 w-4 leading-tight">{i + 1}</span>
+                <span className="text-pink-950 flex-1 pr-2 leading-tight">{mover.name}</span>
+                <span className="font-bold text-amber-400 whitespace-nowrap flex-shrink-0">{mover.qty} pcs</span>
               </div>
             ))}
           </div>
@@ -144,16 +144,16 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
               const isStaple = item.consistency_pct >= 80
               const isOneTime = item.days_sold <= 1
               return (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs flex-shrink-0 w-4 text-pink-700/60">{i + 1}</span>
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-xs flex-shrink-0 w-4 text-pink-700/60 leading-tight">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[10px] font-medium text-pink-950 truncate pr-2">
+                    <div className="flex items-start justify-between mb-0.5">
+                      <span className="text-[10px] font-medium text-pink-950 pr-2 leading-tight">
                         {item.name}
                         {isStaple && <span className="text-emerald-400 ml-1">★</span>}
                         {isOneTime && <span className="text-amber-400 ml-1">○</span>}
                       </span>
-                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap">
+                      <span className="text-[10px] font-bold text-pink-950 whitespace-nowrap flex-shrink-0">
                         {item.days_sold}h · {item.avg_per_day}/d · {item.total_qty}pcs
                       </span>
                     </div>
@@ -214,9 +214,9 @@ export default function AnalyticsView({ data, mode, searchParams }: { data: Anal
           <h3 className="text-xs font-bold text-pink-950 mb-3">🔁 Restock Alert (≤ 10 pcs)</h3>
           <div className="space-y-1">
             {data.restock_alert.slice(0, 10).map((r, i) => (
-              <div key={i} className="flex items-center justify-between text-[10px] py-1 border-b border-pink-100/20">
-                <span className="text-pink-950 flex-1 truncate pr-2">{r.name}</span>
-                <span className={`font-bold ${r.current_stock === 0 ? 'text-rose-400' : 'text-amber-400'}`}>{r.current_stock} pcs</span>
+              <div key={i} className="flex items-start justify-between text-[10px] py-1 border-b border-pink-100/20">
+                <span className="text-pink-950 flex-1 pr-2 leading-tight">{r.name}</span>
+                <span className={`font-bold flex-shrink-0 ${r.current_stock === 0 ? 'text-rose-400' : 'text-amber-400'}`}>{r.current_stock} pcs</span>
               </div>
             ))}
           </div>
