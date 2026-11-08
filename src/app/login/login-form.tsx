@@ -68,7 +68,13 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-sm transition"
+          className="w-full font-bold py-3 px-4 rounded-xl text-sm transition disabled:opacity-50"
+          style={{
+            background: 'rgba(6, 78, 59, 0.15)',
+            border: '1px solid rgba(52, 211, 153, 0.25)',
+            color: '#6ee7b7',
+            boxShadow: '0 0 12px rgba(16, 185, 129, 0.10)',
+          }}
         >
           {loading ? '⏳ Memuat...' : '🔐 Masuk'}
         </button>
