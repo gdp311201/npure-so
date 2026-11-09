@@ -40,15 +40,39 @@ export default async function DashboardPage() {
       .from('v_focus_progress')
       .select('*')
       .eq('period', currentMonth),
-    // Low stock products
+    // Low stock products (fetch id + more items for smart analysis)
     supabase
       .from('v_product_summary')
-      .select('name, current_stock, stock_status')
+      .select('id, name, current_stock')
       .in('stock_status', ['low_stock', 'out_of_stock'])
       .eq('is_active', true)
       .order('current_stock', { ascending: true })
-      .limit(5),
+      .limit(15),
   ])
+
+  // Smart Low Stock — check which products have sales history
+  const lowStockIds = (lowStockProducts || []).map(p => p.id)
+  const { data: sellOutCheck } = lowStockIds.length > 0 ? await supabase
+    .from('stock_transactions')
+    .select('product_id, qty')
+    .eq('type', 'sell_out')
+    .eq('is_deleted', false)
+    .in('product_id', lowStockIds) : { data: null }
+
+  const sellOutQtyMap = new Map<string, number>()
+  sellOutCheck?.forEach(tx => sellOutQtyMap.set(tx.product_id, (sellOutQtyMap.get(tx.product_id) || 0) + tx.qty))
+
+  const lowStockSmart = (lowStockProducts || []).map(p => ({
+    name: p.name,
+    current_stock: p.current_stock,
+    has_sales: (sellOutQtyMap.get(p.id) || 0) > 0,
+    sold_qty: sellOutQtyMap.get(p.id) || 0,
+  })).sort((a, b) => {
+    // Sort: has_sales first (sold-out = restock urgent), then dead stock
+    if (a.has_sales && !b.has_sales) return -1
+    if (!a.has_sales && b.has_sales) return 1
+    return a.current_stock - b.current_stock
+  }).slice(0, 8)
 
   // Calculate today's stats
   const todaySellOutQty = todaySales?.reduce((sum, s) => sum + s.total_qty, 0) || 0
@@ -193,33 +217,34 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Low stock alert */}
-        {lowStockProducts && lowStockProducts.length > 0 && (
+        {/* Low stock alert — smart (sold-out vs dead stock) */}
+        {lowStockSmart.length > 0 && (
           <div>
             <h3 className="text-xs font-bold text-pink-950 mb-2 px-1 flex items-center gap-1">
               ⚠️ Low Stock
               <span className="text-[10px] text-pink-700/50 font-normal">
-                ({lowStockProducts.length})
+                ({lowStockSmart.length})
               </span>
             </h3>
             <div className="glass-stock-low rounded-xl p-3 space-y-1.5">
-              {lowStockProducts.map((p) => (
-                <div
-                  key={p.name}
-                  className="flex items-center justify-between text-xs"
-                >
+              {lowStockSmart.map((p) => (
+                <div key={p.name} className="flex items-center justify-between text-xs">
                   <span className="text-pink-950 truncate flex-1 pr-2">{p.name}</span>
-                  <span
-                    className={`font-bold whitespace-nowrap ${
-                      p.current_stock === 0
-                        ? 'text-rose-600'
-                        : 'text-amber-600'
-                    }`}
-                  >
-                    {p.current_stock} pcs
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span>{p.has_sales ? '🔴' : '⚫'}</span>
+                    <span className={`font-bold whitespace-nowrap ${p.current_stock === 0 ? 'text-rose-400' : 'text-amber-400'}`}>
+                      {p.current_stock} pcs
+                    </span>
+                    {p.has_sales && p.sold_qty > 0 && (
+                      <span className="text-[9px] text-pink-700/40">({p.sold_qty} sold)</span>
+                    )}
+                  </div>
                 </div>
               ))}
+            </div>
+            <div className="flex gap-2 mt-2 px-1">
+              <span className="text-[8px] text-rose-400">🔴 Sold out — restock!</span>
+              <span className="text-[8px] text-slate-400">⚫ Dead stock — skip</span>
             </div>
           </div>
         )}
