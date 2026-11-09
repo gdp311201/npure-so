@@ -1,3 +1,8 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { BULAN_LIST, getCurrentMonth, getCurrentYear } from '@/lib/utils/format'
+
 interface OpnameRow {
   id: string
   opname_date: string
@@ -20,6 +25,7 @@ interface Session {
   matchCount: number
   totalAdjustment: number
   rows: OpnameRow[]
+  createdAtLabel: string
 }
 
 const BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
@@ -40,36 +46,103 @@ function formatDateTime(iso: string): string {
 }
 
 export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
-  // Group by date + type (each "session" = one opname event)
-  const sessions: Session[] = []
-  const sessionMap = new Map<string, OpnameRow[]>()
+  const currentMonth = getCurrentMonth()
+  const currentYear = getCurrentYear()
 
-  opnames.forEach((row) => {
-    const key = `${row.opname_date}_${row.opname_type}`
-    if (!sessionMap.has(key)) sessionMap.set(key, [])
-    sessionMap.get(key)!.push(row)
-  })
+  // === Filter state (default: current month + current year) ===
+  const [filterMonth, setFilterMonth] = useState<number | 'all'>(currentMonth)
+  const [filterYear, setFilterYear] = useState<number>(currentYear)
 
-  sessionMap.forEach((rows, key) => {
-    const first = rows[0]
-    const mismatchCount = rows.filter((r) => r.difference !== 0).length
-    const matchCount = rows.length - mismatchCount
-    const totalAdjustment = rows.reduce((s, r) => s + r.difference, 0)
-    sessions.push({
-      key,
-      opname_date: first.opname_date,
-      opname_type: first.opname_type,
-      totalProducts: rows.length,
-      mismatchCount,
-      matchCount,
-      totalAdjustment,
-      rows: rows.sort((a, b) => a.product_id.name.localeCompare(b.product_id.name)),
+  // === Delete state ===
+  const [deleteTarget, setDeleteTarget] = useState<Session | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // === Available years from data (always include current year) ===
+  const availableYears = useMemo(() => {
+    const years = new Set<number>()
+    opnames.forEach((o) => {
+      years.add(new Date(o.opname_date).getFullYear())
     })
-  })
+    years.add(currentYear)
+    return Array.from(years).sort((a, b) => b - a) // descending
+  }, [opnames, currentYear])
 
-  // Sort sessions by date desc
-  sessions.sort((a, b) => b.opname_date.localeCompare(a.opname_date))
+  // === Filter opnames by month/year ===
+  const filteredOpnames = useMemo(() => {
+    return opnames.filter((o) => {
+      const date = new Date(o.opname_date)
+      const yearMatch = date.getFullYear() === filterYear
+      const monthMatch = filterMonth === 'all' || date.getMonth() + 1 === filterMonth
+      return yearMatch && monthMatch
+    })
+  }, [opnames, filterMonth, filterYear])
 
+  // === Group by created_at (truncated to second) + opname_type ===
+  // Each submit = 1 session (Supabase NOW() returns same timestamp for whole transaction)
+  const sessions = useMemo<Session[]>(() => {
+    const sessionMap = new Map<string, OpnameRow[]>()
+
+    filteredOpnames.forEach((row) => {
+      const dt = new Date(row.created_at)
+      // Truncate to second — captures exact transaction timestamp
+      const tsKey = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}_${dt.getHours()}-${dt.getMinutes()}-${dt.getSeconds()}`
+      const sessionKey = `${row.opname_date}_${row.opname_type}_${tsKey}`
+
+      if (!sessionMap.has(sessionKey)) sessionMap.set(sessionKey, [])
+      sessionMap.get(sessionKey)!.push(row)
+    })
+
+    const result: Session[] = []
+    sessionMap.forEach((rows, key) => {
+      const first = rows[0]
+      const mismatchCount = rows.filter((r) => r.difference !== 0).length
+      const matchCount = rows.length - mismatchCount
+      const totalAdjustment = rows.reduce((s, r) => s + r.difference, 0)
+      result.push({
+        key,
+        opname_date: first.opname_date,
+        opname_type: first.opname_type,
+        totalProducts: rows.length,
+        mismatchCount,
+        matchCount,
+        totalAdjustment,
+        rows: rows.sort((a, b) => a.product_id.name.localeCompare(b.product_id.name)),
+        createdAtLabel: formatDateTime(first.created_at),
+      })
+    })
+
+    // Sort sessions by created_at desc (most recent first)
+    result.sort((a, b) => b.rows[0].created_at.localeCompare(a.rows[0].created_at))
+    return result
+  }, [filteredOpnames])
+
+  // === Delete handler ===
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const ids = deleteTarget.rows.map((r) => r.id)
+      const response = await fetch('/api/opname/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Gagal hapus sesi opname')
+
+      // Close modal + refresh page to reload data
+      setDeleteTarget(null)
+      window.location.reload()
+    } catch (err: any) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // === Empty state ===
   if (opnames.length === 0) {
     return (
       <div className="glass-card rounded-2xl p-8 text-center">
@@ -84,108 +157,204 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="glass-mini rounded-xl p-3 text-center">
-        <p className="text-[10px] font-bold uppercase text-pink-900/60">Total Opname</p>
-        <p className="text-lg font-black text-pink-950">{sessions.length} sesi</p>
-        <p className="text-[10px] text-pink-900/60 mt-0.5">{opnames.length} produk tercatat</p>
+      {/* === Filter Card === */}
+      <div className="glass-card rounded-xl p-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Bulan</label>
+            <select
+              value={filterMonth === 'all' ? 'all' : String(filterMonth)}
+              onChange={(e) => setFilterMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold"
+            >
+              <option value="all">📅 Semua Bulan</option>
+              {BULAN_LIST.map((b, i) => (
+                <option key={b} value={i + 1}>{b}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Tahun</label>
+            <select
+              value={String(filterYear)}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {sessions.map((session) => (
-        <div key={session.key} className="glass-card rounded-2xl p-4">
-          {/* Session header */}
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <p className="text-sm font-bold text-pink-950">{formatDate(session.opname_date)}</p>
-              <p className="text-[10px] font-bold uppercase text-pink-700 mt-0.5">
-                {session.opname_type === 'bulanan' ? '📅 Bulanan' : '🎉 Event'}
-              </p>
-            </div>
-            <span
-              className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                session.mismatchCount > 0
-                  ? 'bg-amber-100/80 text-amber-700'
-                  : 'bg-emerald-100/80 text-emerald-700'
-              }`}
-            >
-              {session.mismatchCount > 0
-                ? `${session.mismatchCount} selisih`
-                : '✓ Semua match'}
-            </span>
-          </div>
+      {/* === Summary count === */}
+      <div className="glass-mini rounded-xl p-3 text-center">
+        <p className="text-[10px] font-bold uppercase text-pink-900/60">Filter Result</p>
+        <p className="text-sm font-bold text-pink-950">
+          {sessions.length} sesi · {filteredOpnames.length} produk tercatat
+        </p>
+      </div>
 
-          {/* Session summary */}
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="glass-mini rounded-lg p-2 text-center">
-              <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Produk</p>
-              <p className="text-sm font-bold text-pink-950">{session.totalProducts}</p>
-            </div>
-            <div className="glass-mini rounded-lg p-2 text-center">
-              <p className="text-[9px] font-bold uppercase text-pink-900/60">Match</p>
-              <p className="text-sm font-bold text-emerald-500">{session.matchCount}</p>
-            </div>
-            <div className="glass-mini rounded-lg p-2 text-center">
-              <p className="text-[9px] font-bold uppercase text-pink-900/60">Selisih</p>
-              <p className="text-sm font-bold text-amber-500">{session.mismatchCount}</p>
-            </div>
-          </div>
-
-          {/* Total adjustment */}
-          {session.totalAdjustment !== 0 && (
-            <div className="glass-mini rounded-lg p-2 text-center mb-3">
-              <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Penyesuaian Stock</p>
-              <p
-                className={`text-lg font-black font-mono ${
-                  session.totalAdjustment > 0 ? 'text-rose-500' : 'text-emerald-500'
+      {/* === Sessions list === */}
+      {sessions.length === 0 ? (
+        <div className="glass-card rounded-2xl p-6 text-center">
+          <div className="text-3xl mb-2 opacity-50">🔍</div>
+          <p className="text-xs font-bold text-pink-900/70">Tidak ada opname pada periode ini</p>
+          <p className="text-[10px] text-pink-900/50 mt-1">Coba ganti filter bulan/tahun</p>
+        </div>
+      ) : (
+        sessions.map((session) => (
+          <div key={session.key} className="glass-card rounded-2xl p-4">
+            {/* === Session header === */}
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-pink-950">{formatDate(session.opname_date)}</p>
+                <p className="text-[10px] font-bold uppercase text-pink-700 mt-0.5">
+                  {session.opname_type === 'bulanan' ? '📅 Bulanan' : '🎉 Event'}
+                </p>
+                <p className="text-[9px] text-pink-900/50 mt-0.5">{session.createdAtLabel}</p>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                  session.mismatchCount > 0
+                    ? 'bg-amber-100/80 text-amber-700'
+                    : 'bg-emerald-100/80 text-emerald-700'
                 }`}
               >
-                {session.totalAdjustment > 0 ? '+' : ''}{session.totalAdjustment} pcs
-              </p>
-              <p className="text-[9px] text-pink-900/50 mt-0.5">
-                {session.totalAdjustment > 0
-                  ? '(stock berkurang — perlu investigasi)'
-                  : '(stock bertambah — surplus)'}
-              </p>
+                {session.mismatchCount > 0
+                  ? `${session.mismatchCount} selisih`
+                  : '✓ Semua match'}
+              </span>
             </div>
-          )}
 
-          {/* Mismatched products detail (only if any) */}
-          {session.mismatchCount > 0 && (
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Selisih:</p>
-              {session.rows
-                .filter((r) => r.difference !== 0)
-                .map((row) => (
-                  <div
-                    key={row.id}
-                    className="glass-mini rounded-lg p-2 flex items-center justify-between text-[10px]"
-                  >
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className="font-bold text-pink-950 truncate">{row.product_id.name}</p>
-                      <p className="text-pink-900/60 font-mono">
-                        System: {row.system_count} → Fisik: {row.physical_count}
-                      </p>
-                      {row.reason && (
-                        <p className="text-pink-700/70 italic mt-0.5">📝 {row.reason}</p>
-                      )}
-                    </div>
-                    <span
-                      className={`font-bold font-mono whitespace-nowrap ${
-                        row.difference > 0 ? 'text-rose-500' : 'text-emerald-500'
-                      }`}
+            {/* === Session summary stats === */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="glass-mini rounded-lg p-2 text-center">
+                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Produk</p>
+                <p className="text-sm font-bold text-pink-950">{session.totalProducts}</p>
+              </div>
+              <div className="glass-mini rounded-lg p-2 text-center">
+                <p className="text-[9px] font-bold uppercase text-pink-900/60">Match</p>
+                <p className="text-sm font-bold text-emerald-500">{session.matchCount}</p>
+              </div>
+              <div className="glass-mini rounded-lg p-2 text-center">
+                <p className="text-[9px] font-bold uppercase text-pink-900/60">Selisih</p>
+                <p className="text-sm font-bold text-amber-500">{session.mismatchCount}</p>
+              </div>
+            </div>
+
+            {/* === Total adjustment (if any) === */}
+            {session.totalAdjustment !== 0 && (
+              <div className="glass-mini rounded-lg p-2 text-center mb-3">
+                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Penyesuaian Stock</p>
+                <p
+                  className={`text-lg font-black font-mono ${
+                    session.totalAdjustment > 0 ? 'text-rose-500' : 'text-emerald-500'
+                  }`}
+                >
+                  {session.totalAdjustment > 0 ? '+' : ''}{session.totalAdjustment} pcs
+                </p>
+                <p className="text-[9px] text-pink-900/50 mt-0.5">
+                  {session.totalAdjustment > 0
+                    ? '(stock berkurang — perlu investigasi)'
+                    : '(stock bertambah — surplus)'}
+                </p>
+              </div>
+            )}
+
+            {/* === Detail selisih (only if mismatch) === */}
+            {session.mismatchCount > 0 && (
+              <div className="space-y-1 mb-3">
+                <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Selisih:</p>
+                {session.rows
+                  .filter((r) => r.difference !== 0)
+                  .map((row) => (
+                    <div
+                      key={row.id}
+                      className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
                     >
-                      {row.difference > 0 ? '+' : ''}{row.difference}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-pink-950 leading-tight">{row.product_id.name}</p>
+                        <p className="text-pink-900/60 font-mono mt-0.5">
+                          System: {row.system_count} → Fisik: {row.physical_count}
+                        </p>
+                        {row.reason && (
+                          <p className="text-pink-700/80 italic mt-0.5 leading-tight">📝 {row.reason}</p>
+                        )}
+                      </div>
+                      <span
+                        className={`font-bold font-mono whitespace-nowrap ${
+                          row.difference > 0 ? 'text-rose-500' : 'text-emerald-500'
+                        }`}
+                      >
+                        {row.difference > 0 ? '+' : ''}{row.difference}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
 
-          {/* Footer: timestamp */}
-          <p className="text-[9px] text-pink-900/40 text-center mt-3">
-            Disimpan: {formatDateTime(session.rows[0].created_at)}
-          </p>
+            {/* === Footer: delete button === */}
+            <button
+              onClick={() => {
+                setDeleteTarget(session)
+                setDeleteError(null)
+              }}
+              className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
+            >
+              🗑 Hapus Sesi Ini
+            </button>
+          </div>
+        ))
+      )}
+
+      {/* === Delete Confirmation Modal === */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div
+            className="glass-card rounded-2xl p-4 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-bold text-pink-950 mb-2">⚠️ Hapus Sesi Opname?</h3>
+            <div className="text-xs text-pink-900/70 space-y-1 mb-3">
+              <p>📅 {formatDate(deleteTarget.opname_date)} ({deleteTarget.opname_type})</p>
+              <p>📊 {deleteTarget.totalProducts} produk · {deleteTarget.mismatchCount} selisih</p>
+              <p className="text-[10px] text-pink-900/50">Disimpan: {deleteTarget.createdAtLabel}</p>
+            </div>
+            <div className="glass-mini rounded-lg p-2 mb-3 text-[10px] text-amber-700 bg-amber-50/80 border border-amber-200/60 leading-relaxed">
+              ⚠️ <strong>Konsekuensi (Opsi A):</strong>
+              <br />• Record opname akan dihapus permanen
+              <br />• Adjustment transaction juga dihapus
+              <br />• <strong>Stock akan REVERT ke pre-opname state</strong>
+            </div>
+            {deleteError && (
+              <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 mb-2">
+                ❌ {deleteError}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="py-2.5 rounded-lg text-xs font-bold glass-mini text-pink-950 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="py-2.5 rounded-lg text-xs font-bold bg-gradient-to-r from-rose-400 to-rose-500 text-white disabled:opacity-50"
+              >
+                {deleting ? '⏳ Menghapus...' : '🗑 Hapus'}
+              </button>
+            </div>
+          </div>
         </div>
-      ))}
+      )}
     </div>
   )
 }
