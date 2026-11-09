@@ -70,6 +70,21 @@ export default function SellInHistory({ transactions }: { transactions: StockTxR
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // === Expand/collapse state ===
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set())
+
+  function toggleSession(key: string) {
+    setExpandedSessions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(key)) {
+        newSet.delete(key)
+      } else {
+        newSet.add(key)
+      }
+      return newSet
+    })
+  }
+
   // === Available years ===
   const availableYears = useMemo(() => {
     const years = new Set<number>()
@@ -248,72 +263,83 @@ export default function SellInHistory({ transactions }: { transactions: StockTxR
           <p className="text-[10px] text-pink-900/50 mt-1">Coba ganti filter bulan/tahun</p>
         </div>
       ) : (
-        sessions.map((session) => (
-          <div key={session.key} className="glass-card rounded-2xl p-4">
-            {/* === Session header === */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-bold text-pink-950">{formatDate(session.transaction_date)}</p>
-                <p className="text-[10px] font-bold uppercase text-pink-700 mt-0.5">📥 Sell In</p>
-                <p className="text-[9px] text-pink-900/50 mt-0.5">{session.createdAtLabel}</p>
-              </div>
-              <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100/80 text-emerald-700">
-                {session.totalItems} item · {session.totalQty} pcs
-              </span>
-            </div>
-
-            {/* === Session stats === */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="glass-mini rounded-lg p-2 text-center">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Qty</p>
-                <p className="text-sm font-bold text-pink-950 font-mono">{session.totalQty} pcs</p>
-              </div>
-              <div className="glass-mini rounded-lg p-2 text-center">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Nilai (HET)</p>
-                <p className="text-sm font-bold text-emerald-500 font-mono">{formatRupiah(session.totalValue)}</p>
-              </div>
-            </div>
-
-            {/* === Note (if any) === */}
-            {session.note && (
-              <div className="glass-mini rounded-lg p-2 mb-3 text-[10px] text-pink-700/80 italic">
-                📝 {session.note}
-              </div>
-            )}
-
-            {/* === Items detail === */}
-            <div className="space-y-1 mb-3">
-              <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Item:</p>
-              {session.rows.map((row) => (
-                <div
-                  key={row.id}
-                  className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-pink-950 leading-tight">{row.product_id.name}</p>
-                    <p className="text-pink-900/60 font-mono mt-0.5">
-                      {formatRupiah(Number(row.unit_price))} × {row.qty} pcs
-                    </p>
-                  </div>
-                  <span className="font-bold font-mono whitespace-nowrap text-pink-950">
-                    {formatRupiah(Number(row.unit_price) * row.qty)}
-                  </span>
+        sessions.map((session) => {
+          const isExpanded = expandedSessions.has(session.key)
+          return (
+            <div key={session.key} className="glass-card rounded-2xl p-4">
+              {/* === Compact header (always visible — click to expand/collapse) === */}
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSession(session.key)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-pink-950">{formatDate(session.transaction_date)}</p>
+                  <p className="text-[10px] text-pink-700/70 mt-0.5">
+                    📥 {session.totalItems} item · {session.totalQty} pcs · <span className="font-bold text-emerald-600">{formatRupiah(session.totalValue)}</span>
+                  </p>
+                  <p className="text-[9px] text-pink-900/40 mt-0.5">{session.createdAtLabel}</p>
                 </div>
-              ))}
-            </div>
+                <span className="text-lg ml-2">{isExpanded ? '🔼' : '🔽'}</span>
+              </div>
 
-            {/* === Footer: delete button === */}
-            <button
-              onClick={() => {
-                setDeleteTarget(session)
-                setDeleteError(null)
-              }}
-              className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
-            >
-              🗑 Hapus Sesi Ini
-            </button>
-          </div>
-        ))
+              {/* === Expanded content (only when expanded) === */}
+              {isExpanded && (
+                <div className="mt-3">
+                  {/* Session stats */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Qty</p>
+                      <p className="text-sm font-bold text-pink-950 font-mono">{session.totalQty} pcs</p>
+                    </div>
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Nilai (HET)</p>
+                      <p className="text-sm font-bold text-emerald-500 font-mono">{formatRupiah(session.totalValue)}</p>
+                    </div>
+                  </div>
+
+                  {/* Note (if any) */}
+                  {session.note && (
+                    <div className="glass-mini rounded-lg p-2 mb-3 text-[10px] text-pink-700/80 italic">
+                      📝 {session.note}
+                    </div>
+                  )}
+
+                  {/* Items detail */}
+                  <div className="space-y-1 mb-3">
+                    <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Item:</p>
+                    {session.rows.map((row) => (
+                      <div
+                        key={row.id}
+                        className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-pink-950 leading-tight">{row.product_id.name}</p>
+                          <p className="text-pink-900/60 font-mono mt-0.5">
+                            {formatRupiah(Number(row.unit_price))} × {row.qty} pcs
+                          </p>
+                        </div>
+                        <span className="font-bold font-mono whitespace-nowrap text-pink-950">
+                          {formatRupiah(Number(row.unit_price) * row.qty)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => {
+                      setDeleteTarget(session)
+                      setDeleteError(null)
+                    }}
+                    className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
+                  >
+                    🗑 Hapus Sesi Ini
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })
       )}
 
       {/* === Delete Confirmation Modal === */}
