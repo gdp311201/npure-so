@@ -62,6 +62,8 @@ export default function SellOutCart({
     )
   }
 
+  // ✅ FIX: Don't remove item when input is cleared. Only remove via 🗑 button.
+  // Input uses defaultValue + key to allow free typing without React forcing value back.
   function setQtyDirect(productId: string, qty: number) {
     if (isNaN(qty) || qty <= 0) return
     setCart((prev) => prev.map((item) => (item.product_id === productId ? { ...item, qty } : item)))
@@ -82,22 +84,14 @@ export default function SellOutCart({
   const totalQty = cart.reduce((sum, item) => sum + item.qty, 0)
 
   async function handleSave() {
-    if (cart.length === 0) {
-      setError('Keranjang masih kosong')
-      return
-    }
+    if (cart.length === 0) { setError('Keranjang masih kosong'); return }
     setSaving(true)
     setError(null)
-
     try {
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transaction_date: date,
-          items: cart,
-          discount_rate: discountRate,
-        }),
+        body: JSON.stringify({ transaction_date: date, items: cart, discount_rate: discountRate }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Gagal menyimpan')
@@ -115,23 +109,14 @@ export default function SellOutCart({
     <div className="space-y-3">
       {/* Date picker */}
       <div className="glass-mini rounded-xl p-3">
-        <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">
-          Tanggal Transaksi
-        </label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold"
-        />
+        <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Tanggal Transaksi</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold" />
       </div>
 
       {/* Cart header */}
       <div className="flex items-center justify-between px-1">
         <h2 className="text-xs font-bold text-pink-950 flex items-center gap-1">🛒 Keranjang</h2>
-        <span className="text-[10px] text-pink-700/60 font-semibold">
-          {cart.length} item{cart.length !== 1 ? 's' : ''} · {totalQty} pcs
-        </span>
+        <span className="text-[10px] text-pink-700/60 font-semibold">{cart.length} item{cart.length !== 1 ? 's' : ''} · {totalQty} pcs</span>
       </div>
 
       {products.length === 0 && (
@@ -159,7 +144,18 @@ export default function SellOutCart({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">−</button>
-                  <input type="number" value={item.qty} onChange={(e) => setQtyDirect(item.product_id, parseInt(e.target.value) || 0)} className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60" min="1" />
+                  {/* ✅ FIX: defaultValue + key — allows free typing, remounts when +/- changes qty */}
+                  <input
+                    key={`${item.product_id}-${item.qty}`}
+                    type="number"
+                    defaultValue={item.qty}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      if (!isNaN(val) && val > 0) setQtyDirect(item.product_id, val)
+                    }}
+                    className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
+                    min="1"
+                  />
                   <button onClick={() => updateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">+</button>
                 </div>
                 <div className="text-right">
@@ -172,46 +168,28 @@ export default function SellOutCart({
         </div>
       ) : null}
 
-      {/* Toggle button: Tambah Produk / Tutup Pencarian */}
+      {/* Toggle button */}
       {products.length > 0 && (
         <button
           onClick={() => showPicker ? closePicker() : setShowPicker(true)}
-          className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold transition ${
-            showPicker
-              ? 'bg-white/60 text-pink-950 border border-pink-200/60'
-              : 'glass-mini text-pink-950 border border-pink-200/60 hover:bg-white/60'
-          }`}
+          className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold transition ${showPicker ? 'bg-white/60 text-pink-950 border border-pink-200/60' : 'glass-mini text-pink-950 border border-pink-200/60 hover:bg-white/60'}`}
         >
           {showPicker ? '✕ Tutup Pencarian' : '+ Tambah Produk'}
         </button>
       )}
 
-      {/* INLINE Product Picker — no modal, no fixed positioning */}
+      {/* INLINE Product Picker */}
       {showPicker && (
         <div className="space-y-2">
-          {/* Search card */}
           <div className="glass-card rounded-xl p-3">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="🔍 Cari produk..."
-              autoFocus
-              className="custom-input w-full rounded-xl py-2 px-3 text-sm"
-            />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Cari produk..." autoFocus className="custom-input w-full rounded-xl py-2 px-3 text-sm" />
           </div>
-
-          {/* Results — scrollable, limited height */}
           <div className="max-h-[35vh] overflow-y-auto space-y-1">
             {filteredProducts.length === 0 ? (
               <p className="text-xs text-pink-900/50 text-center py-4">Produk tidak ditemukan</p>
             ) : (
               filteredProducts.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => { addToCart(product); closePicker() }}
-                  className="w-full glass-mini rounded-xl p-3 flex items-center justify-between hover:bg-white/60 transition text-left"
-                >
+                <button key={product.id} onClick={() => { addToCart(product); closePicker() }} className="w-full glass-mini rounded-xl p-3 flex items-center justify-between hover:bg-white/60 transition text-left">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-xs font-bold text-pink-950 truncate">{product.name}</p>
                     <p className="text-[10px] text-pink-700/60">{formatRupiah(Number(product.current_price))} · Stock: {product.current_stock}</p>
@@ -227,31 +205,16 @@ export default function SellOutCart({
       {/* Summary */}
       {cart.length > 0 && !showPicker && (
         <div className="glass-card rounded-2xl p-4 space-y-1.5">
-          <div className="flex justify-between text-xs text-pink-800/70">
-            <span>Subtotal ({totalQty} pcs)</span>
-            <span className="font-mono font-semibold">{formatRupiah(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-pink-800/70">
-            <span>Diskon ({(discountRate * 100).toFixed(0)}%)</span>
-            <span className="font-mono font-semibold text-rose-600">−{formatRupiah(discountAmount)}</span>
-          </div>
-          <div className="border-t border-pink-200/50 pt-1.5 flex justify-between items-center">
-            <span className="text-sm font-bold text-pink-950">TOTAL</span>
-            <span className="text-lg font-black text-pink-950 font-mono">{formatRupiah(total)}</span>
-          </div>
+          <div className="flex justify-between text-xs text-pink-800/70"><span>Subtotal ({totalQty} pcs)</span><span className="font-mono font-semibold">{formatRupiah(subtotal)}</span></div>
+          <div className="flex justify-between text-xs text-pink-800/70"><span>Diskon ({(discountRate * 100).toFixed(0)}%)</span><span className="font-mono font-semibold text-rose-600">−{formatRupiah(discountAmount)}</span></div>
+          <div className="border-t border-pink-200/50 pt-1.5 flex justify-between items-center"><span className="text-sm font-bold text-pink-950">TOTAL</span><span className="text-lg font-black text-pink-950 font-mono">{formatRupiah(total)}</span></div>
         </div>
       )}
 
-      {error && (
-        <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">❌ {error}</div>
-      )}
+      {error && <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">❌ {error}</div>}
 
       {!showPicker && (
-        <button
-          onClick={handleSave}
-          disabled={cart.length === 0 || saving}
-          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-sm"
-        >
+        <button onClick={handleSave} disabled={cart.length === 0 || saving} className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-sm">
           {saving ? '⏳ Menyimpan...' : `💾 Simpan Transaksi (${formatRupiah(total)})`}
         </button>
       )}
