@@ -62,7 +62,7 @@ export default async function SellInPage({
   const transactions = (sellInData as unknown as StockTxRow[]) || []
 
   return (
-    <AppShell title="Sell In" showBackButton backHref="/dashboard">
+    <AppShell title="Sell In" showBackButton backHref="/transaksi">
       {/* Tabs UI */}
       <SellInTabs activeTab={tab} />
 
