@@ -62,6 +62,11 @@ export default function SellOutCart({
     )
   }
 
+  function setQtyDirect(productId: string, qty: number) {
+    if (qty <= 0) { removeItem(productId); return }
+    setCart((prev) => prev.map((item) => (item.product_id === productId ? { ...item, qty } : item)))
+  }
+
   function removeItem(productId: string) {
     setCart((prev) => prev.filter((item) => item.product_id !== productId))
   }
@@ -162,7 +167,13 @@ export default function SellOutCart({
                   >
                     −
                   </button>
-                  <span className="text-sm font-bold text-pink-950 w-6 text-center">{item.qty}</span>
+                  <input
+                    type="number"
+                    value={item.qty}
+                    onChange={(e) => setQtyDirect(item.product_id, parseInt(e.target.value) || 0)}
+                    className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
+                    min="1"
+                  />
                   <button
                     onClick={() => updateQty(item.product_id, 1)}
                     className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white"
@@ -228,14 +239,14 @@ export default function SellOutCart({
         {saving ? '⏳ Menyimpan...' : `💾 Simpan Transaksi (${formatRupiah(total)})`}
       </button>
 
-      {/* Product Picker Modal */}
+      {/* Product Picker Modal — centered, fixed */}
       {showPicker && (
         <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4"
           onClick={() => setShowPicker(false)}
         >
           <div
-            className="glass-modal-card rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+            className="glass-modal-card rounded-2xl w-full max-w-md max-h-[70vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-pink-200/50 flex items-center justify-between">
