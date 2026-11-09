@@ -5,6 +5,11 @@ import OpnameTabs from './opname-tabs'
 import InputOpname from './input-opname'
 import HistoryOpname from './history-opname'
 
+// Force dynamic rendering — ensures Supabase queries always return fresh data
+// Critical for History tab: after delete, page reload must show updated data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Product {
   id: string
   name: string
