@@ -78,6 +78,7 @@ export default function InputOpname({
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
 
   // Filtered products based on search
@@ -115,6 +116,7 @@ export default function InputOpname({
     }
     setSaving(true)
     setError(null)
+    setSuccess(null)
     try {
       const items = products
         .filter((p) => physicalCounts[p.id] !== null)
@@ -137,12 +139,25 @@ export default function InputOpname({
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Gagal menyimpan opname')
 
-      // Switch to history tab after save
-      router.push('/transaksi/opname?tab=history')
-      router.refresh()
+      // Build success message based on API response
+      const opnameCount = result.opname_count || filledCount
+      const adjustmentCount = result.adjustment_count || 0
+      let msg = `Opname tersimpan! ${opnameCount} produk dihitung`
+      if (adjustmentCount > 0) {
+        msg += `, ${adjustmentCount} adjustment dibuat`
+      }
+      if (result.warning) {
+        msg += ` ⚠ ${result.warning}`
+      }
+      setSuccess(msg)
+
+      // Wait 1.5s so user sees the success message, then redirect to history
+      setTimeout(() => {
+        router.push('/transaksi/opname?tab=history')
+        router.refresh()
+      }, 1500)
     } catch (err: any) {
       setError(err.message)
-    } finally {
       setSaving(false)
     }
   }
@@ -249,10 +264,18 @@ export default function InputOpname({
         </div>
       )}
 
-      {/* === Error === */}
+      {/* === Error banner === */}
       {error && (
         <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">
           ❌ {error}
+        </div>
+      )}
+
+      {/* === Success banner (NEW — shows briefly before redirect) === */}
+      {success && (
+        <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl py-2.5 px-3 animate-pulse">
+          ✅ {success}
+          <p className="text-[10px] font-normal text-emerald-600 mt-0.5">Mengalihkan ke History...</p>
         </div>
       )}
 
@@ -279,11 +302,13 @@ export default function InputOpname({
             </div>
             <button
               onClick={handleSave}
-              disabled={filledCount === 0 || saving}
+              disabled={filledCount === 0 || saving || !!success}
               className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-lg shadow-pink-500/30"
             >
               {saving
                 ? '⏳ Menyimpan...'
+                : success
+                ? '✅ Tersimpan!'
                 : `💾 Simpan Opname (${filledCount} produk)`}
             </button>
           </div>
