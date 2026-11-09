@@ -138,7 +138,7 @@ export default function InputOpname({
       if (!response.ok) throw new Error(result.error || 'Gagal menyimpan opname')
 
       // Switch to history tab after save
-      router.push('/opname?tab=history')
+      router.push('/transaksi/opname?tab=history')
       router.refresh()
     } catch (err: any) {
       setError(err.message)
