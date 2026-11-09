@@ -161,7 +161,6 @@ export default function SellInCart({
                 </button>
               </div>
               <div className="flex items-center justify-between">
-                {/* ✅ Direct qty input — bisa ketik angka langsung (e.g., "50") */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateQty(item.product_id, -1)}
@@ -259,14 +258,14 @@ export default function SellInCart({
         {saving ? '⏳ Menyimpan...' : `💾 Simpan Barang Masuk (${totalQty} pcs)`}
       </button>
 
-      {/* Product Picker Modal */}
+      {/* Product Picker Modal — centered, fixed */}
       {showPicker && (
         <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4"
           onClick={() => setShowPicker(false)}
         >
           <div
-            className="glass-modal-card rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+            className="glass-modal-card rounded-2xl w-full max-w-md max-h-[70vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-pink-200/50 flex items-center justify-between">
