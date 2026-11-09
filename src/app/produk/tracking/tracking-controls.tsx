@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BULAN_LIST, getCurrentMonth, getCurrentYear, getTodayISO, getTahunListDynamic } from '@/lib/utils/format'
 
@@ -28,6 +28,11 @@ export default function TrackingControls({
   const [dateFrom, setDateFrom] = useState(searchParams.dateFrom || getTodayISO())
   const [dateTo, setDateTo] = useState(searchParams.dateTo || getTodayISO())
   const router = useRouter()
+
+  // Safety net: when productId arrives from URL, hide picker so period selector shows
+  useEffect(() => {
+    if (selectedProductId) setShowPicker(false)
+  }, [selectedProductId])
 
   const selectedProduct = products.find((p) => p.id === selectedProductId)
   const filteredProducts = search
