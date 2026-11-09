@@ -35,6 +35,7 @@ export default async function TrackingPage({
     return (
       <AppShell title="Product Tracking" showBackButton backHref="/produk">
         <TrackingControls
+          key="no-product"
           products={(allProducts as Product[]) || []}
           selectedProductId={null}
           mode={mode}
@@ -144,6 +145,7 @@ export default async function TrackingPage({
   return (
     <AppShell title="Product Tracking" showBackButton backHref="/produk">
       <TrackingControls
+        key={`product-${productId}`}
         products={(allProducts as Product[]) || []}
         selectedProductId={productId}
         mode={mode}
