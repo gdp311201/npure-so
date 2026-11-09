@@ -22,45 +22,42 @@ export default function TrackingControls({
 }) {
   const [showPicker, setShowPicker] = useState(!selectedProductId)
   const [search, setSearch] = useState('')
-  const [currentMode, setCurrentMode] = useState(mode)
+  const [currentMode, setCurrentMode] = useState(mode || 'bulanan')
   const [month, setMonth] = useState(Number(searchParams.month) || getCurrentMonth())
   const [year, setYear] = useState(Number(searchParams.year) || getCurrentYear())
-  const [date, setDate] = useState(searchParams.date || getTodayISO())
+  const [dateFrom, setDateFrom] = useState(searchParams.dateFrom || getTodayISO())
+  const [dateTo, setDateTo] = useState(searchParams.dateTo || getTodayISO())
   const router = useRouter()
 
   const selectedProduct = products.find((p) => p.id === selectedProductId)
-
-  // Dynamic results — only when search has text
   const filteredProducts = search
     ? products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
     : []
 
-  function selectProduct(productId: string) {
+  function buildParams(): URLSearchParams {
     const params = new URLSearchParams()
-    params.set('productId', productId)
+    if (selectedProductId) params.set('productId', selectedProductId)
     params.set('mode', currentMode)
-    if (currentMode === 'harian' || currentMode === 'mingguan') {
-      params.set('date', date)
+    if (currentMode === 'custom') {
+      params.set('dateFrom', dateFrom)
+      params.set('dateTo', dateTo)
     } else {
       params.set('month', String(month))
       params.set('year', String(year))
     }
+    return params
+  }
+
+  function selectProduct(productId: string) {
+    const params = buildParams()
+    params.set('productId', productId)
     router.push(`/produk/tracking?${params.toString()}`)
     router.refresh()
   }
 
   function handleShow() {
     if (!selectedProductId) return
-    const params = new URLSearchParams()
-    params.set('productId', selectedProductId)
-    params.set('mode', currentMode)
-    if (currentMode === 'harian' || currentMode === 'mingguan') {
-      params.set('date', date)
-    } else {
-      params.set('month', String(month))
-      params.set('year', String(year))
-    }
-    router.push(`/produk/tracking?${params.toString()}`)
+    router.push(`/produk/tracking?${buildParams().toString()}`)
     router.refresh()
   }
 
@@ -114,22 +111,23 @@ export default function TrackingControls({
       {/* Period selector — only when product is selected */}
       {selectedProductId && !showPicker && (
         <div className="glass-mini rounded-xl p-3">
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {(['harian', 'mingguan', 'bulanan'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setCurrentMode(m)}
-                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold uppercase transition ${
-                  currentMode === m
-                    ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white'
-                    : 'bg-white/60 text-pink-950/70 border border-pink-200/60'
-                }`}
-              >
-                {m === 'harian' ? '📅 Harian' : m === 'mingguan' ? '📆 Mingguan' : '📊 Bulanan'}
-              </button>
-            ))}
+          {/* 2 mode buttons: Bulanan + Custom Range */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <button
+              onClick={() => setCurrentMode('bulanan')}
+              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold uppercase transition ${currentMode === 'bulanan' ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white' : 'bg-white/60 text-pink-950/70 border border-pink-200/60'}`}
+            >
+              📊 Bulanan
+            </button>
+            <button
+              onClick={() => setCurrentMode('custom')}
+              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold uppercase transition ${currentMode === 'custom' ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white' : 'bg-white/60 text-pink-950/70 border border-pink-200/60'}`}
+            >
+              🎯 Custom Range
+            </button>
           </div>
 
+          {/* Mode: Bulanan — month + year dropdowns */}
           {currentMode === 'bulanan' ? (
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
@@ -146,11 +144,16 @@ export default function TrackingControls({
               </div>
             </div>
           ) : (
-            <div className="mb-2">
-              <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">
-                {currentMode === 'harian' ? 'Tanggal' : 'Tanggal (pilih hari apapun dalam minggu itu)'}
-              </label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm" />
+            /* Mode: Custom Range — date from + date to */
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Dari Tanggal</label>
+                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Sampai Tanggal</label>
+                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm" />
+              </div>
             </div>
           )}
 
