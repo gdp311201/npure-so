@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatRupiah } from '@/lib/utils/format'
 
@@ -16,6 +16,56 @@ interface CartItem {
   name: string
   price: number
   qty: number
+}
+
+// ✅ CartItemRow — sub-component with LOCAL STATE for input
+// This prevents keyboard from closing when typing multi-digit numbers
+function CartItemRow({ item, onUpdateQty, onSetQty, onRemove }: {
+  item: CartItem
+  onUpdateQty: (id: string, delta: number) => void
+  onSetQty: (id: string, qty: number) => void
+  onRemove: (id: string) => void
+}) {
+  const [inputValue, setInputValue] = useState(String(item.qty))
+  const prevQtyRef = useRef(item.qty)
+
+  // Sync local state when qty changes externally (e.g., +/- buttons)
+  // But DON'T sync while user is typing (prevents keyboard close)
+  if (prevQtyRef.current !== item.qty) {
+    prevQtyRef.current = item.qty
+    setInputValue(String(item.qty))
+  }
+
+  return (
+    <div className="glass-card rounded-xl p-3">
+      <div className="flex items-start justify-between mb-2">
+        <p className="text-xs font-bold text-pink-950 flex-1 pr-2">{item.name}</p>
+        <button onClick={() => onRemove(item.product_id)} className="text-rose-500 text-sm hover:text-rose-700">🗑</button>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={() => onUpdateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">−</button>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value)
+              const val = parseInt(e.target.value)
+              if (!isNaN(val) && val > 0) onSetQty(item.product_id, val)
+            }}
+            className="w-14 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
+            min="1"
+          />
+          <button onClick={() => onUpdateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">+</button>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-pink-700/60">{formatRupiah(item.price)} × {item.qty}</p>
+          <p className="text-sm font-bold text-pink-950">{formatRupiah(item.price * item.qty)}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function SellOutCart({
@@ -55,15 +105,11 @@ export default function SellOutCart({
   function updateQty(productId: string, delta: number) {
     setCart((prev) =>
       prev
-        .map((item) =>
-          item.product_id === productId ? { ...item, qty: item.qty + delta } : item
-        )
+        .map((item) => (item.product_id === productId ? { ...item, qty: item.qty + delta } : item))
         .filter((item) => item.qty > 0)
     )
   }
 
-  // ✅ FIX: Don't remove item when input is cleared. Only remove via 🗑 button.
-  // Input uses defaultValue + key to allow free typing without React forcing value back.
   function setQtyDirect(productId: string, qty: number) {
     if (isNaN(qty) || qty <= 0) return
     setCart((prev) => prev.map((item) => (item.product_id === productId ? { ...item, qty } : item)))
@@ -73,10 +119,7 @@ export default function SellOutCart({
     setCart((prev) => prev.filter((item) => item.product_id !== productId))
   }
 
-  function closePicker() {
-    setShowPicker(false)
-    setSearch('')
-  }
+  function closePicker() { setShowPicker(false); setSearch('') }
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0)
   const discountAmount = Math.round(subtotal * discountRate)
@@ -85,8 +128,7 @@ export default function SellOutCart({
 
   async function handleSave() {
     if (cart.length === 0) { setError('Keranjang masih kosong'); return }
-    setSaving(true)
-    setError(null)
+    setSaving(true); setError(null)
     try {
       const response = await fetch('/api/sales', {
         method: 'POST',
@@ -98,22 +140,17 @@ export default function SellOutCart({
       setCart([])
       router.push('/dashboard')
       router.refresh()
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err: any) { setError(err.message) }
+    finally { setSaving(false) }
   }
 
   return (
     <div className="space-y-3">
-      {/* Date picker */}
       <div className="glass-mini rounded-xl p-3">
         <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Tanggal Transaksi</label>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold" />
       </div>
 
-      {/* Cart header */}
       <div className="flex items-center justify-between px-1">
         <h2 className="text-xs font-bold text-pink-950 flex items-center gap-1">🛒 Keranjang</h2>
         <span className="text-[10px] text-pink-700/60 font-semibold">{cart.length} item{cart.length !== 1 ? 's' : ''} · {totalQty} pcs</span>
@@ -122,11 +159,9 @@ export default function SellOutCart({
       {products.length === 0 && (
         <div className="glass-card rounded-2xl p-4 text-center">
           <p className="text-xs text-rose-700 font-bold">⚠️ Tidak ada produk tersedia</p>
-          <p className="text-[10px] text-pink-900/50 mt-1">Pastikan database sudah di-seed</p>
         </div>
       )}
 
-      {/* Cart items */}
       {cart.length === 0 && !showPicker ? (
         <div className="glass-card rounded-2xl p-6 text-center">
           <div className="text-3xl mb-2 opacity-50">🛒</div>
@@ -136,39 +171,17 @@ export default function SellOutCart({
       ) : cart.length > 0 ? (
         <div className="space-y-2">
           {cart.map((item) => (
-            <div key={item.product_id} className="glass-card rounded-xl p-3">
-              <div className="flex items-start justify-between mb-2">
-                <p className="text-xs font-bold text-pink-950 flex-1 pr-2">{item.name}</p>
-                <button onClick={() => removeItem(item.product_id)} className="text-rose-500 text-sm hover:text-rose-700">🗑</button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">−</button>
-                  {/* ✅ FIX: defaultValue + key — allows free typing, remounts when +/- changes qty */}
-                  <input
-                    key={`${item.product_id}-${item.qty}`}
-                    type="number"
-                    defaultValue={item.qty}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value)
-                      if (!isNaN(val) && val > 0) setQtyDirect(item.product_id, val)
-                    }}
-                    className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
-                    min="1"
-                  />
-                  <button onClick={() => updateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">+</button>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-pink-700/60">{formatRupiah(item.price)} × {item.qty}</p>
-                  <p className="text-sm font-bold text-pink-950">{formatRupiah(item.price * item.qty)}</p>
-                </div>
-              </div>
-            </div>
+            <CartItemRow
+              key={item.product_id}
+              item={item}
+              onUpdateQty={updateQty}
+              onSetQty={setQtyDirect}
+              onRemove={removeItem}
+            />
           ))}
         </div>
       ) : null}
 
-      {/* Toggle button */}
       {products.length > 0 && (
         <button
           onClick={() => showPicker ? closePicker() : setShowPicker(true)}
@@ -178,7 +191,6 @@ export default function SellOutCart({
         </button>
       )}
 
-      {/* INLINE Product Picker */}
       {showPicker && (
         <div className="space-y-2">
           <div className="glass-card rounded-xl p-3">
@@ -202,7 +214,6 @@ export default function SellOutCart({
         </div>
       )}
 
-      {/* Summary */}
       {cart.length > 0 && !showPicker && (
         <div className="glass-card rounded-2xl p-4 space-y-1.5">
           <div className="flex justify-between text-xs text-pink-800/70"><span>Subtotal ({totalQty} pcs)</span><span className="font-mono font-semibold">{formatRupiah(subtotal)}</span></div>
