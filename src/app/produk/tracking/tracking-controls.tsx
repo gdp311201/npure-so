@@ -29,9 +29,11 @@ export default function TrackingControls({
   const router = useRouter()
 
   const selectedProduct = products.find((p) => p.id === selectedProductId)
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  )
+
+  // Dynamic results — only when search has text
+  const filteredProducts = search
+    ? products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
+    : []
 
   function selectProduct(productId: string) {
     const params = new URLSearchParams()
@@ -43,7 +45,7 @@ export default function TrackingControls({
       params.set('month', String(month))
       params.set('year', String(year))
     }
-    router.push(`/laporan/tracking?${params.toString()}`)
+    router.push(`/produk/tracking?${params.toString()}`)
     router.refresh()
   }
 
@@ -58,12 +60,8 @@ export default function TrackingControls({
       params.set('month', String(month))
       params.set('year', String(year))
     }
-    router.push(`/laporan/tracking?${params.toString()}`)
+    router.push(`/produk/tracking?${params.toString()}`)
     router.refresh()
-  }
-
-  function changeProduct() {
-    setShowPicker(true)
   }
 
   return (
@@ -75,48 +73,47 @@ export default function TrackingControls({
             <p className="text-[10px] font-bold uppercase text-pink-900/60">Produk</p>
             <p className="text-xs font-bold text-pink-950 truncate">{selectedProduct.name}</p>
           </div>
-          <button
-            onClick={changeProduct}
-            className="glass-mini rounded-lg px-3 py-1.5 text-[10px] font-bold text-pink-950"
-          >
-            ↻ Ganti
-          </button>
+          <button onClick={() => { setShowPicker(true); setSearch('') }} className="glass-mini rounded-lg px-3 py-1.5 text-[10px] font-bold text-pink-950">↻ Ganti</button>
         </div>
       ) : (
-        <div className="glass-mini rounded-xl p-3">
-          <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">
-            Pilih Produk
-          </label>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Cari produk..."
-            autoFocus
-            className="custom-input w-full rounded-lg py-2 px-3 text-sm mb-2"
-          />
-          <div className="max-h-48 overflow-y-auto space-y-1">
-            {filteredProducts.length === 0 ? (
-              <p className="text-[10px] text-pink-900/50 text-center py-2">Produk tidak ditemukan</p>
-            ) : (
-              filteredProducts.slice(0, 20).map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => selectProduct(product.id)}
-                  className="w-full glass-mini rounded-lg p-2 text-left hover:bg-white/10 transition"
-                >
-                  <p className="text-xs font-bold text-pink-950 truncate">{product.name}</p>
-                </button>
-              ))
-            )}
+        <div className="space-y-3">
+          {/* Search card */}
+          <div className="glass-card rounded-xl p-3">
+            <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Pilih Produk</label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍 Ketik nama produk..."
+              autoFocus
+              className="custom-input w-full rounded-lg py-2 px-3 text-sm"
+            />
           </div>
+
+          {/* Dynamic results — separate card, only when search has text */}
+          {search && (
+            <div className="glass-mini rounded-xl p-2 max-h-[30vh] overflow-y-auto space-y-1">
+              {filteredProducts.length === 0 ? (
+                <p className="text-[10px] text-pink-900/50 text-center py-2">Produk tidak ditemukan</p>
+              ) : (
+                filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => selectProduct(product.id)}
+                    className="w-full glass-mini rounded-lg p-2 text-left hover:bg-white/10 transition"
+                  >
+                    <p className="text-xs font-bold text-pink-950 truncate">{product.name}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Period selector — only show when product is selected */}
+      {/* Period selector — only when product is selected */}
       {selectedProductId && !showPicker && (
         <div className="glass-mini rounded-xl p-3">
-          {/* Mode buttons */}
           <div className="grid grid-cols-3 gap-2 mb-2">
             {(['harian', 'mingguan', 'bulanan'] as const).map((m) => (
               <button
@@ -133,26 +130,17 @@ export default function TrackingControls({
             ))}
           </div>
 
-          {/* Mode-specific inputs */}
           {currentMode === 'bulanan' ? (
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
                 <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Bulan</label>
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(Number(e.target.value))}
-                  className="custom-input w-full rounded-lg py-2 px-3 text-sm"
-                >
+                <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="custom-input w-full rounded-lg py-2 px-3 text-sm">
                   {BULAN_LIST.map((b, i) => <option key={b} value={i + 1}>{b}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Tahun</label>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                  className="custom-input w-full rounded-lg py-2 px-3 text-sm"
-                >
+                <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="custom-input w-full rounded-lg py-2 px-3 text-sm">
                   {getTahunListDynamic().map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
@@ -162,21 +150,11 @@ export default function TrackingControls({
               <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">
                 {currentMode === 'harian' ? 'Tanggal' : 'Tanggal (pilih hari apapun dalam minggu itu)'}
               </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="custom-input w-full rounded-lg py-2 px-3 text-sm"
-              />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm" />
             </div>
           )}
 
-          <button
-            onClick={handleShow}
-            className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-2 px-4 rounded-lg text-xs"
-          >
-            📊 Tampilkan Mutasi
-          </button>
+          <button onClick={handleShow} className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold py-2 px-4 rounded-lg text-xs">📊 Tampilkan Mutasi</button>
         </div>
       )}
     </div>
