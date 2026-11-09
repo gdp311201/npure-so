@@ -17,7 +17,7 @@ export default async function TrackingPage({ searchParams }: { searchParams: Pro
     return (
       <AppShell title="Product Tracking" showBackButton backHref="/produk">
         <TrackingControls products={(allProducts as Product[]) || []} selectedProductId={null} mode={mode} searchParams={params} />
-        <div className="glass-card rounded-2xl p-6 text-center">
+        <div className="glass-card rounded-2xl p-6 text-center mt-4">
           <div className="text-3xl mb-2 opacity-50">📋</div>
           <p className="text-xs font-bold text-pink-900/70">Pilih produk untuk melihat mutasi</p>
           <p className="text-[10px] text-pink-900/50 mt-1">Cari produk di atas, lalu pilih periode</p>
@@ -35,7 +35,6 @@ export default async function TrackingPage({ searchParams }: { searchParams: Pro
     const [ty, tm, td] = dateTo.split('-').map(Number)
     periodLabel = `${fd} ${BULAN_LIST[fm - 1].slice(0, 3)} ${fy} - ${td} ${BULAN_LIST[tm - 1].slice(0, 3)} ${ty}`
   } else {
-    // bulanan (default)
     const month = params.month ? Number(params.month) : getCurrentMonth()
     const year = params.year ? Number(params.year) : getCurrentYear()
     dateFrom = `${year}-${String(month).padStart(2, '0')}-01`
@@ -74,7 +73,7 @@ export default async function TrackingPage({ searchParams }: { searchParams: Pro
     <AppShell title="Product Tracking" showBackButton backHref="/produk">
       <TrackingControls products={(allProducts as Product[]) || []} selectedProductId={productId} mode={mode} searchParams={params} />
       {product && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-4">
           <div className="glass-card rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-bold text-pink-950">{product.name}</h2>
