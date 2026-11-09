@@ -13,18 +13,22 @@ interface Product {
 function ProductRow({
   product,
   physical,
+  reason,
   onSetPhysical,
+  onSetReason,
 }: {
   product: Product
   physical: number | null
+  reason: string
   onSetPhysical: (productId: string, value: number | null) => void
+  onSetReason: (productId: string, value: string) => void
 }) {
   const system = product.current_stock
   const diff = physical === null ? null : physical - system
   const isMismatch = diff !== null && diff !== 0
 
   return (
-    <div className="glass-card rounded-xl p-3">
+    <div className={`glass-card rounded-xl p-3 ${isMismatch ? 'border-amber-300/60' : ''}`}>
       <div className="flex items-start justify-between mb-2">
         <p className="text-xs font-bold text-pink-950 flex-1 pr-2 leading-tight">{product.name}</p>
         {isMismatch && (
@@ -61,6 +65,16 @@ function ProductRow({
           />
         </div>
       </div>
+      {/* === Alasan selisih (required when mismatch) === */}
+      {isMismatch && (
+        <input
+          type="text"
+          value={reason}
+          onChange={(e) => onSetReason(product.id, e.target.value)}
+          placeholder="📝 Alasan selisih (wajib)..."
+          className="custom-input w-full rounded-lg py-1.5 px-2 text-xs mt-2 border border-amber-300/60"
+        />
+      )}
     </div>
   )
 }
@@ -75,6 +89,7 @@ export default function InputOpname({
   const [date, setDate] = useState(defaultDate)
   const [opnameType, setOpnameType] = useState<'bulanan' | 'event'>('bulanan')
   const [physicalCounts, setPhysicalCounts] = useState<Record<string, number | null>>({})
+  const [reasons, setReasons] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -95,23 +110,40 @@ export default function InputOpname({
   }).length
   const matchCount = filledCount - mismatchCount
 
+  // Count products with mismatch but no reason (for validation)
+  const missingReasonCount = products.filter((p) => {
+    const phys = physicalCounts[p.id]
+    return phys !== null && phys !== p.current_stock && !reasons[p.id]?.trim()
+  }).length
+
   function setPhysical(productId: string, value: number | null) {
     setPhysicalCounts((prev) => ({ ...prev, [productId]: value }))
+  }
+
+  function setReason(productId: string, value: string) {
+    setReasons((prev) => ({ ...prev, [productId]: value }))
   }
 
   function fillAllWithSystem() {
     const all: Record<string, number | null> = {}
     products.forEach((p) => { all[p.id] = p.current_stock })
     setPhysicalCounts(all)
+    setReasons({}) // clear all reasons since no mismatch
   }
 
   function clearAll() {
     setPhysicalCounts({})
+    setReasons({})
   }
 
   async function handleSave() {
     if (filledCount === 0) {
       setError('Belum ada produk yang dihitung fisiknya')
+      return
+    }
+    // === Validation: mismatch products MUST have reason ===
+    if (missingReasonCount > 0) {
+      setError(`Ada ${missingReasonCount} produk dengan selisih tapi belum diisi alasan. Wajib isi alasan dulu.`)
       return
     }
     setSaving(true)
@@ -125,6 +157,7 @@ export default function InputOpname({
           physical_count: physicalCounts[p.id] as number,
           system_count: p.current_stock,
           difference: (physicalCounts[p.id] as number) - p.current_stock,
+          reason: reasons[p.id]?.trim() || null,
         }))
 
       const response = await fetch('/api/opname', {
@@ -258,7 +291,9 @@ export default function InputOpname({
               key={product.id}
               product={product}
               physical={physicalCounts[product.id] ?? null}
+              reason={reasons[product.id] ?? ''}
               onSetPhysical={setPhysical}
+              onSetReason={setReason}
             />
           ))}
         </div>
@@ -271,7 +306,7 @@ export default function InputOpname({
         </div>
       )}
 
-      {/* === Success banner (NEW — shows briefly before redirect) === */}
+      {/* === Success banner === */}
       {success && (
         <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl py-2.5 px-3 animate-pulse">
           ✅ {success}
@@ -279,8 +314,7 @@ export default function InputOpname({
         </div>
       )}
 
-      {/* === Sticky Simpan button — stays visible while scrolling === */}
-      {/* Spacer to prevent button overlapping last product when fully scrolled */}
+      {/* === Sticky Simpan button === */}
       <div className="h-24" aria-hidden />
 
       <div className="fixed bottom-24 left-0 right-0 z-30 px-4 pb-2 pointer-events-none">
@@ -295,8 +329,12 @@ export default function InputOpname({
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold uppercase text-pink-900/70">Status</p>
-                <p className={`text-xs font-bold ${mismatchCount > 0 ? 'text-amber-500' : 'text-emerald-400'}`}>
-                  {mismatchCount > 0 ? '⚠ Ada Selisih' : filledCount > 0 ? '✓ Match' : 'Kosong'}
+                <p className={`text-xs font-bold ${mismatchCount > 0 ? (missingReasonCount > 0 ? 'text-rose-500' : 'text-amber-500') : 'text-emerald-400'}`}>
+                  {mismatchCount > 0
+                    ? missingReasonCount > 0
+                      ? `⚠ ${missingReasonCount} butuh alasan`
+                      : '⚠ Ada Selisih'
+                    : filledCount > 0 ? '✓ Match' : 'Kosong'}
                 </p>
               </div>
             </div>
