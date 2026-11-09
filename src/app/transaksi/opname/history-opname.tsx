@@ -141,18 +141,30 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   // === Delete handler ===
   async function handleDelete() {
     if (!deleteTarget) return
+    console.log('[Delete Opname] Step 1: handleDelete started, deleteTarget set')
     setDeleting(true)
     setDeleteError(null)
     try {
       const ids = deleteTarget.rows.map((r) => r.id)
-      console.log('[Delete Opname] Sending request:', { ids, count: ids.length })
+      console.log('[Delete Opname] Step 2: ids prepared', { count: ids.length, firstId: ids[0] })
 
+      // === AbortController with 10s timeout ===
+      // Detects if Service Worker is blocking the fetch (fetch hangs forever)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.error('[Delete Opname] FETCH TIMED OUT after 10s — Service Worker is likely blocking the request')
+      }, 10000)
+
+      console.log('[Delete Opname] Step 3: calling fetch /api/opname/delete...')
       const response = await fetch('/api/opname/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
+        signal: controller.signal,
       })
-      console.log('[Delete Opname] Response status:', response.status, response.statusText)
+      clearTimeout(timeoutId)
+      console.log('[Delete Opname] Step 4: fetch returned', response.status, response.statusText)
 
       // Handle non-JSON responses (e.g., 404 HTML page if endpoint missing)
       const contentType = response.headers.get('content-type') || ''
@@ -166,15 +178,26 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
       }
 
       const result = await response.json()
-      console.log('[Delete Opname] Response body:', result)
+      console.log('[Delete Opname] Step 5: response parsed', result)
       if (!response.ok) throw new Error(result.error || 'Gagal hapus sesi opname')
 
-      // Close modal + refresh page to reload data
+      // Close modal + reload page WITH CACHE-BUSTING
+      // window.location.reload() may serve cached HTML (Next.js caching)
+      // Adding _t timestamp forces browser to fetch FRESH HTML from server
+      console.log('[Delete Opname] Step 6: success, reloading with cache-busting URL...')
       setDeleteTarget(null)
-      window.location.reload()
+      const freshUrl = '/transaksi/opname?tab=history&_t=' + Date.now()
+      window.location.href = freshUrl
     } catch (err: any) {
-      console.error('[Delete Opname] Error:', err)
-      setDeleteError(err.message)
+      console.error('[Delete Opname] ERROR caught:', err.name, err.message)
+      if (err.name === 'AbortError') {
+        setDeleteError(
+          'FETCH TIMEOUT (10s) — Service Worker kemungkinan memblokir request. ' +
+          'SOLUSI: Buka DevTools (F12) → tab Application → Service Workers → klik "Unregister" di semua SW → hard refresh (Ctrl+Shift+R) → coba lagi.'
+        )
+      } else {
+        setDeleteError(err.message)
+      }
     } finally {
       setDeleting(false)
     }
