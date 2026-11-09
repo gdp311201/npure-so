@@ -52,7 +52,7 @@ export default async function OpnamePage({
     .order('created_at', { ascending: false })
 
   const products = (productsData as Product[]) || []
-  const opnames = (opnamesData as OpnameRow[]) || []
+  const opnames = (opnamesData as unknown as OpnameRow[]) || []
   const today = getTodayISO()
 
   return (
