@@ -59,6 +59,7 @@ export default function SellInCart({
     )
   }
 
+  // ✅ FIX: Don't remove item when input is cleared. Only remove via 🗑 button.
   function setQtyDirect(productId: string, qty: number) {
     if (isNaN(qty) || qty <= 0) return
     setCart((prev) => prev.map((item) => (item.product_id === productId ? { ...item, qty } : item)))
@@ -138,7 +139,18 @@ export default function SellInCart({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">−</button>
-                  <input type="number" value={item.qty} onChange={(e) => setQtyDirect(item.product_id, parseInt(e.target.value) || 0)} className="w-14 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60" min="1" />
+                  {/* ✅ FIX: defaultValue + key — allows free typing, remounts when +/- changes qty */}
+                  <input
+                    key={`${item.product_id}-${item.qty}`}
+                    type="number"
+                    defaultValue={item.qty}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      if (!isNaN(val) && val > 0) setQtyDirect(item.product_id, val)
+                    }}
+                    className="w-14 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
+                    min="1"
+                  />
                   <button onClick={() => updateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">+</button>
                 </div>
                 <div className="text-right">
@@ -155,15 +167,13 @@ export default function SellInCart({
       {products.length > 0 && (
         <button
           onClick={() => showPicker ? closePicker() : setShowPicker(true)}
-          className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold transition ${
-            showPicker ? 'bg-white/60 text-pink-950 border border-pink-200/60' : 'glass-mini text-pink-950 border border-pink-200/60 hover:bg-white/60'
-          }`}
+          className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold transition ${showPicker ? 'bg-white/60 text-pink-950 border border-pink-200/60' : 'glass-mini text-pink-950 border border-pink-200/60 hover:bg-white/60'}`}
         >
           {showPicker ? '✕ Tutup Pencarian' : '+ Tambah Produk'}
         </button>
       )}
 
-      {/* INLINE Product Picker — no modal */}
+      {/* INLINE Product Picker */}
       {showPicker && (
         <div className="space-y-2">
           <div className="glass-card rounded-xl p-3">
@@ -200,10 +210,7 @@ export default function SellInCart({
         <div className="glass-card rounded-2xl p-4 space-y-1.5">
           <div className="flex justify-between text-xs text-pink-800/70"><span>Total Qty</span><span className="font-mono font-semibold">{totalQty} pcs</span></div>
           <div className="flex justify-between text-xs text-pink-800/70"><span>Total Nilai (HET)</span><span className="font-mono font-semibold">{formatRupiah(totalValue)}</span></div>
-          <div className="border-t border-pink-200/50 pt-1.5 flex justify-between items-center">
-            <span className="text-sm font-bold text-pink-950">TOTAL BARANG MASUK</span>
-            <span className="text-lg font-black text-emerald-600 font-mono">{totalQty} pcs</span>
-          </div>
+          <div className="border-t border-pink-200/50 pt-1.5 flex justify-between items-center"><span className="text-sm font-bold text-pink-950">TOTAL BARANG MASUK</span><span className="text-lg font-black text-emerald-600 font-mono">{totalQty} pcs</span></div>
         </div>
       )}
 
