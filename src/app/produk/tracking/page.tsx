@@ -6,12 +6,12 @@ import TrackingControls from './tracking-controls'
 interface Product { id: string; name: string }
 interface TransactionRow { date: string; type: string; qty_in: number; qty_out: number; balance: number }
 
-export default async function TrackingPage({ searchParams }: { searchParams: Promise<{ productId?: string; mode?: string; date?: string; month?: string; year?: string }> }) {
+export default async function TrackingPage({ searchParams }: { searchParams: Promise<{ productId?: string; mode?: string; date?: string; dateFrom?: string; dateTo?: string; month?: string; year?: string }> }) {
   const params = await searchParams
   const supabase = await createClient()
   const { data: allProducts } = await supabase.from('v_product_summary').select('id, name').eq('is_active', true).order('name')
   const productId = params.productId
-  const mode = (params.mode as 'harian' | 'mingguan' | 'bulanan') || 'bulanan'
+  const mode = (params.mode as 'bulanan' | 'custom') || 'bulanan'
 
   if (!productId) {
     return (
@@ -27,21 +27,15 @@ export default async function TrackingPage({ searchParams }: { searchParams: Pro
   }
 
   let dateFrom: string, dateTo: string, periodLabel: string
-  if (mode === 'harian') {
-    const date = params.date || getTodayISO(); dateFrom = date; dateTo = date
-    const [y, m, d] = date.split('-').map(Number)
-    periodLabel = new Date(y, m - 1, d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  } else if (mode === 'mingguan') {
-    const dateStr = params.date || getTodayISO()
-    const [y, m, d] = dateStr.split('-').map(Number)
-    const date = new Date(y, m - 1, d)
-    const dayOfWeek = date.getDay()
-    const monday = new Date(y, m - 1, d - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
-    const fmt = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
-    dateFrom = fmt(monday); dateTo = fmt(sunday)
-    periodLabel = `${monday.getDate()} ${BULAN_LIST[monday.getMonth()].slice(0, 3)} - ${sunday.getDate()} ${BULAN_LIST[sunday.getMonth()].slice(0, 3)} ${sunday.getFullYear()}`
+
+  if (mode === 'custom') {
+    dateFrom = params.dateFrom || getTodayISO()
+    dateTo = params.dateTo || getTodayISO()
+    const [fy, fm, fd] = dateFrom.split('-').map(Number)
+    const [ty, tm, td] = dateTo.split('-').map(Number)
+    periodLabel = `${fd} ${BULAN_LIST[fm - 1].slice(0, 3)} ${fy} - ${td} ${BULAN_LIST[tm - 1].slice(0, 3)} ${ty}`
   } else {
+    // bulanan (default)
     const month = params.month ? Number(params.month) : getCurrentMonth()
     const year = params.year ? Number(params.year) : getCurrentYear()
     dateFrom = `${year}-${String(month).padStart(2, '0')}-01`
