@@ -84,7 +84,7 @@ export default async function SellOutPage({
   const sales = (salesData as unknown as Sale[]) || []
 
   return (
-    <AppShell title="Sell Out" showBackButton backHref="/dashboard">
+    <AppShell title="Sell Out" showBackButton backHref="/transaksi">
       {/* Tabs UI */}
       <SellOutTabs activeTab={tab} />
 
