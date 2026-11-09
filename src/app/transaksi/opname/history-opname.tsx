@@ -79,6 +79,21 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // === Expand/collapse state ===
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set())
+
+  function toggleSession(key: string) {
+    setExpandedSessions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(key)) {
+        newSet.delete(key)
+      } else {
+        newSet.add(key)
+      }
+      return newSet
+    })
+  }
+
   // === Available years from data (timezone-independent — parse date string) ===
   const availableYears = useMemo(() => {
     const years = new Set<number>()
@@ -275,109 +290,113 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
           <p className="text-[10px] text-pink-900/50 mt-1">Coba ganti filter bulan/tahun</p>
         </div>
       ) : (
-        sessions.map((session) => (
-          <div key={session.key} className="glass-card rounded-2xl p-4">
-            {/* === Session header === */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-bold text-pink-950">{formatDate(session.opname_date)}</p>
-                <p className="text-[10px] font-bold uppercase text-pink-700 mt-0.5">
-                  {session.opname_type === 'bulanan' ? '📅 Bulanan' : '🎉 Event'}
-                </p>
-                <p className="text-[9px] text-pink-900/50 mt-0.5">{session.createdAtLabel}</p>
-              </div>
-              <span
-                className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                  session.mismatchCount > 0
-                    ? 'bg-amber-100/80 text-amber-700'
-                    : 'bg-emerald-100/80 text-emerald-700'
-                }`}
+        sessions.map((session) => {
+          const isExpanded = expandedSessions.has(session.key)
+          return (
+            <div key={session.key} className="glass-card rounded-2xl p-4">
+              {/* === Compact header (always visible — click to expand/collapse) === */}
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSession(session.key)}
               >
-                {session.mismatchCount > 0
-                  ? `${session.mismatchCount} selisih`
-                  : '✓ Semua match'}
-              </span>
-            </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-pink-950">{formatDate(session.opname_date)}</p>
+                  <p className="text-[10px] text-pink-700/70 mt-0.5">
+                    {session.opname_type === 'bulanan' ? '📅 Bulanan' : '🎉 Event'} · {session.totalProducts} produk ·{' '}
+                    <span className={session.mismatchCount > 0 ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold'}>
+                      {session.mismatchCount > 0 ? `${session.mismatchCount} selisih` : '✓ match'}
+                    </span>
+                  </p>
+                  <p className="text-[9px] text-pink-900/40 mt-0.5">{session.createdAtLabel}</p>
+                </div>
+                <span className="text-lg ml-2">{isExpanded ? '🔼' : '🔽'}</span>
+              </div>
 
-            {/* === Session summary stats === */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="glass-mini rounded-lg p-2 text-center">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Produk</p>
-                <p className="text-sm font-bold text-pink-950">{session.totalProducts}</p>
-              </div>
-              <div className="glass-mini rounded-lg p-2 text-center">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Match</p>
-                <p className="text-sm font-bold text-emerald-500">{session.matchCount}</p>
-              </div>
-              <div className="glass-mini rounded-lg p-2 text-center">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Selisih</p>
-                <p className="text-sm font-bold text-amber-500">{session.mismatchCount}</p>
-              </div>
-            </div>
+              {/* === Expanded content (only when expanded) === */}
+              {isExpanded && (
+                <div className="mt-3">
+                  {/* Session summary stats */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Produk</p>
+                      <p className="text-sm font-bold text-pink-950">{session.totalProducts}</p>
+                    </div>
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Match</p>
+                      <p className="text-sm font-bold text-emerald-500">{session.matchCount}</p>
+                    </div>
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Selisih</p>
+                      <p className="text-sm font-bold text-amber-500">{session.mismatchCount}</p>
+                    </div>
+                  </div>
 
-            {/* === Total adjustment (if any) === */}
-            {session.totalAdjustment !== 0 && (
-              <div className="glass-mini rounded-lg p-2 text-center mb-3">
-                <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Penyesuaian Stock</p>
-                <p
-                  className={`text-lg font-black font-mono ${
-                    session.totalAdjustment > 0 ? 'text-rose-500' : 'text-emerald-500'
-                  }`}
-                >
-                  {session.totalAdjustment > 0 ? '+' : ''}{session.totalAdjustment} pcs
-                </p>
-                <p className="text-[9px] text-pink-900/50 mt-0.5">
-                  {session.totalAdjustment > 0
-                    ? '(stock berkurang — perlu investigasi)'
-                    : '(stock bertambah — surplus)'}
-                </p>
-              </div>
-            )}
-
-            {/* === Detail selisih (only if mismatch) === */}
-            {session.mismatchCount > 0 && (
-              <div className="space-y-1 mb-3">
-                <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Selisih:</p>
-                {session.rows
-                  .filter((r) => r.difference !== 0)
-                  .map((row) => (
-                    <div
-                      key={row.id}
-                      className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-pink-950 leading-tight">{row.product_id.name}</p>
-                        <p className="text-pink-900/60 font-mono mt-0.5">
-                          System: {row.system_count} → Fisik: {row.physical_count}
-                        </p>
-                        {row.reason && (
-                          <p className="text-pink-700/80 italic mt-0.5 leading-tight">📝 {row.reason}</p>
-                        )}
-                      </div>
-                      <span
-                        className={`font-bold font-mono whitespace-nowrap ${
-                          row.difference > 0 ? 'text-rose-500' : 'text-emerald-500'
+                  {/* Total adjustment (if any) */}
+                  {session.totalAdjustment !== 0 && (
+                    <div className="glass-mini rounded-lg p-2 text-center mb-3">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Total Penyesuaian Stock</p>
+                      <p
+                        className={`text-lg font-black font-mono ${
+                          session.totalAdjustment > 0 ? 'text-rose-500' : 'text-emerald-500'
                         }`}
                       >
-                        {row.difference > 0 ? '+' : ''}{row.difference}
-                      </span>
+                        {session.totalAdjustment > 0 ? '+' : ''}{session.totalAdjustment} pcs
+                      </p>
+                      <p className="text-[9px] text-pink-900/50 mt-0.5">
+                        {session.totalAdjustment > 0
+                          ? '(stock berkurang — perlu investigasi)'
+                          : '(stock bertambah — surplus)'}
+                      </p>
                     </div>
-                  ))}
-              </div>
-            )}
+                  )}
 
-            {/* === Footer: delete button === */}
-            <button
-              onClick={() => {
-                setDeleteTarget(session)
-                setDeleteError(null)
-              }}
-              className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
-            >
-              🗑 Hapus Sesi Ini
-            </button>
-          </div>
-        ))
+                  {/* Detail selisih (only if mismatch) */}
+                  {session.mismatchCount > 0 && (
+                    <div className="space-y-1 mb-3">
+                      <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Selisih:</p>
+                      {session.rows
+                        .filter((r) => r.difference !== 0)
+                        .map((row) => (
+                          <div
+                            key={row.id}
+                            className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-pink-950 leading-tight">{row.product_id.name}</p>
+                              <p className="text-pink-900/60 font-mono mt-0.5">
+                                System: {row.system_count} → Fisik: {row.physical_count}
+                              </p>
+                              {row.reason && (
+                                <p className="text-pink-700/80 italic mt-0.5 leading-tight">📝 {row.reason}</p>
+                              )}
+                            </div>
+                            <span
+                              className={`font-bold font-mono whitespace-nowrap ${
+                                row.difference > 0 ? 'text-rose-500' : 'text-emerald-500'
+                              }`}
+                            >
+                              {row.difference > 0 ? '+' : ''}{row.difference}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => {
+                      setDeleteTarget(session)
+                      setDeleteError(null)
+                    }}
+                    className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
+                  >
+                    🗑 Hapus Sesi Ini
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })
       )}
 
       {/* === Delete Confirmation Modal === */}
