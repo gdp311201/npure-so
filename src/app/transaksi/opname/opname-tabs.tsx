@@ -6,7 +6,7 @@ export default function OpnameTabs({ activeTab }: { activeTab: 'input' | 'histor
   const router = useRouter()
 
   function switchTab(tab: 'input' | 'history') {
-    router.push(`/opname?tab=${tab}`)
+    router.push(`/transaksi/opname?tab=${tab}`)
     router.refresh()
   }
 
