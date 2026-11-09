@@ -284,7 +284,7 @@ export default function InputOpname({
             >
               {saving
                 ? '⏳ Menyimpan...'
-                : `💾 Simpan Opname (${filledCount} produk)`
+                : `💾 Simpan Opname (${filledCount} produk)`}
             </button>
           </div>
         </div>
