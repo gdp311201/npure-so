@@ -66,6 +66,10 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   const currentMonth = getCurrentMonth()
   const currentYear = getCurrentYear()
 
+  // === Local opnames state — allows instant UI update after delete ===
+  // Without this, we'd need page reload (which may serve cached HTML)
+  const [localOpnames, setLocalOpnames] = useState(opnames)
+
   // === Filter state (default: current month + current year) ===
   const [filterMonth, setFilterMonth] = useState<number | 'all'>(currentMonth)
   const [filterYear, setFilterYear] = useState<number>(currentYear)
@@ -78,18 +82,18 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   // === Available years from data (timezone-independent — parse date string) ===
   const availableYears = useMemo(() => {
     const years = new Set<number>()
-    opnames.forEach((o) => {
+    localOpnames.forEach((o) => {
       // Parse "YYYY-MM-DD" manually — no new Date() to avoid timezone issues
       const [y] = o.opname_date.split('-').map(Number)
       years.add(y)
     })
     years.add(currentYear)
     return Array.from(years).sort((a, b) => b - a) // descending
-  }, [opnames, currentYear])
+  }, [localOpnames, currentYear])
 
   // === Filter opnames by month/year (timezone-independent — parse date string manually) ===
   const filteredOpnames = useMemo(() => {
-    return opnames.filter((o) => {
+    return localOpnames.filter((o) => {
       // opname_date is "YYYY-MM-DD" — parse manually to avoid timezone issues
       const [y, m] = o.opname_date.split('-').map(Number)
       const yearMatch = y === filterYear
@@ -181,13 +185,14 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
       console.log('[Delete Opname] Step 5: response parsed', result)
       if (!response.ok) throw new Error(result.error || 'Gagal hapus sesi opname')
 
-      // Close modal + reload page WITH CACHE-BUSTING
-      // window.location.reload() may serve cached HTML (Next.js caching)
-      // Adding _t timestamp forces browser to fetch FRESH HTML from server
-      console.log('[Delete Opname] Step 6: success, reloading with cache-busting URL...')
+      // === SUCCESS: update local state (NO page reload needed) ===
+      // Remove deleted rows from localOpnames → useMemo recomputes → UI updates instantly
+      // This avoids all caching issues (no page reload = no cached HTML served)
+      console.log('[Delete Opname] Step 6: success, updating local state...')
+      const deletedIdSet = new Set(ids)
+      setLocalOpnames(prev => prev.filter(o => !deletedIdSet.has(o.id)))
       setDeleteTarget(null)
-      const freshUrl = '/transaksi/opname?tab=history&_t=' + Date.now()
-      window.location.href = freshUrl
+      setDeleting(false)
     } catch (err: any) {
       console.error('[Delete Opname] ERROR caught:', err.name, err.message)
       if (err.name === 'AbortError') {
@@ -204,7 +209,7 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   }
 
   // === Empty state ===
-  if (opnames.length === 0) {
+  if (localOpnames.length === 0) {
     return (
       <div className="glass-card rounded-2xl p-8 text-center">
         <div className="text-4xl mb-3 opacity-50">📚</div>
