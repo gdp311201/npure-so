@@ -2,13 +2,16 @@
    NPURE SO — Service Worker (PWA Offline Support)
    ============================================================
    Strategy:
-   - App Shell (HTML/CSS/JS): Cache-First
-   - Static Assets (images, icons): Cache-First
+   - HTML Documents (navigation): Network-First, fallback to cache
+     (always fetch fresh HTML so users get latest code updates)
+   - Static Assets with hashed URLs (_next/static/*): Cache-First
+     (safe to cache long-term because hashes change with content)
+   - Other Static Assets (images, icons): Cache-First
    - Supabase API requests: Network-First, fallback to cache
    - IndexedDB for pending transactions (handled in app code)
    ============================================================ */
 
-const CACHE_VERSION = 'npure-so-v1';
+const CACHE_VERSION = 'npure-so-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -31,14 +34,17 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean up old caches
+// Activate: clean up old caches + claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(
         keys
           .filter((key) => key.startsWith('npure-so-') && !key.startsWith(CACHE_VERSION))
-          .map((key) => caches.delete(key))
+          .map((key) => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          })
       ))
       .then(() => self.clients.claim())
   );
@@ -60,7 +66,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful GET responses
           if (response.ok) {
             const clone = response.clone();
             caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
@@ -72,8 +77,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin (app shell + static): Cache-First
+  // Same-origin requests
   if (url.origin === self.location.origin) {
+    // === HTML Documents (navigation requests) — Network-First ===
+    // This ensures users always get the latest HTML (with references to new JS bundles)
+    if (request.mode === 'navigate' ||
+        (request.headers.get('accept') || '').includes('text/html')) {
+      event.respondWith(
+        fetch(request)
+          .then((response) => {
+            // Cache the fresh HTML for offline fallback
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => caches.match(request).then((cached) => cached || Response.error()))
+      );
+      return;
+    }
+
+    // === Static Assets — Cache-First ===
+    // Safe because Next.js uses content-hashed URLs for _next/static/*
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
