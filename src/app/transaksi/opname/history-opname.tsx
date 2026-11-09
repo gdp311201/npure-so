@@ -31,18 +31,35 @@ interface Session {
 const BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
 
 function formatDate(iso: string): string {
+  // Date-only string — no timezone ambiguity (YYYY-MM-DD)
   const [y, m, d] = iso.split('-').map(Number)
   return `${d} ${BULAN_SHORT[m - 1]} ${y}`
 }
 
 function formatDateTime(iso: string): string {
+  // Use Intl.DateTimeFormat with explicit timezone to ensure
+  // CONSISTENT output between server (Vercel UTC) and client (Jakarta)
+  // Without this, hydration mismatch occurs (React error #418)
   const dt = new Date(iso)
-  const d = dt.getDate().toString().padStart(2, '0')
-  const m = BULAN_SHORT[dt.getMonth()]
-  const y = dt.getFullYear()
-  const h = dt.getHours().toString().padStart(2, '0')
-  const min = dt.getMinutes().toString().padStart(2, '0')
-  return `${d} ${m} ${y} · ${h}:${min}`
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    day: '2-digit',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(dt)
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || ''
+  const day = get('day')
+  const monthNum = parseInt(get('month')) - 1
+  const year = get('year')
+  let hour = get('hour')
+  if (hour === '24') hour = '00' // Intl can return 24 for midnight
+  const minute = get('minute')
+
+  return `${day} ${BULAN_SHORT[monthNum]} ${year} · ${hour}:${minute}`
 }
 
 export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
@@ -58,35 +75,39 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // === Available years from data (always include current year) ===
+  // === Available years from data (timezone-independent — parse date string) ===
   const availableYears = useMemo(() => {
     const years = new Set<number>()
     opnames.forEach((o) => {
-      years.add(new Date(o.opname_date).getFullYear())
+      // Parse "YYYY-MM-DD" manually — no new Date() to avoid timezone issues
+      const [y] = o.opname_date.split('-').map(Number)
+      years.add(y)
     })
     years.add(currentYear)
     return Array.from(years).sort((a, b) => b - a) // descending
   }, [opnames, currentYear])
 
-  // === Filter opnames by month/year ===
+  // === Filter opnames by month/year (timezone-independent — parse date string manually) ===
   const filteredOpnames = useMemo(() => {
     return opnames.filter((o) => {
-      const date = new Date(o.opname_date)
-      const yearMatch = date.getFullYear() === filterYear
-      const monthMatch = filterMonth === 'all' || date.getMonth() + 1 === filterMonth
+      // opname_date is "YYYY-MM-DD" — parse manually to avoid timezone issues
+      const [y, m] = o.opname_date.split('-').map(Number)
+      const yearMatch = y === filterYear
+      const monthMatch = filterMonth === 'all' || m === filterMonth
       return yearMatch && monthMatch
     })
   }, [opnames, filterMonth, filterYear])
 
-  // === Group by created_at (truncated to second) + opname_type ===
-  // Each submit = 1 session (Supabase NOW() returns same timestamp for whole transaction)
+  // === Group by raw created_at ISO string (timezone-independent) ===
+  // All rows in one submit share the same created_at from Supabase NOW()
+  // Truncate to minute for safety (handles any ms variance)
   const sessions = useMemo<Session[]>(() => {
     const sessionMap = new Map<string, OpnameRow[]>()
 
     filteredOpnames.forEach((row) => {
-      const dt = new Date(row.created_at)
-      // Truncate to second — captures exact transaction timestamp
-      const tsKey = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}_${dt.getHours()}-${dt.getMinutes()}-${dt.getSeconds()}`
+      // Use raw ISO string — no new Date() parsing → no timezone ambiguity
+      // "2026-11-09T11:18:45.123Z" → "2026-11-09T11:18" (truncate to minute)
+      const tsKey = row.created_at.slice(0, 16)
       const sessionKey = `${row.opname_date}_${row.opname_type}_${tsKey}`
 
       if (!sessionMap.has(sessionKey)) sessionMap.set(sessionKey, [])
