@@ -83,6 +83,7 @@ export default function SellOutCart({
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
 
   const filteredProducts = products.filter((p) =>
@@ -90,6 +91,8 @@ export default function SellOutCart({
   )
 
   function addToCart(product: Product) {
+    // Clear success message when starting new transaction
+    setSuccess(null)
     const price = Number(product.current_price)
     setCart((prev) => {
       const existing = prev.find((item) => item.product_id === product.id)
@@ -128,8 +131,15 @@ export default function SellOutCart({
 
   async function handleSave() {
     if (cart.length === 0) { setError('Keranjang masih kosong'); return }
-    setSaving(true); setError(null)
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
     try {
+      // Save snapshot before clearing cart
+      const savedItems = cart.length
+      const savedQty = totalQty
+      const savedTotal = total
+
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,19 +147,31 @@ export default function SellOutCart({
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Gagal menyimpan')
+
+      // ✅ STAY ON PAGE — clear cart + show success (no redirect)
       setCart([])
-      router.push('/dashboard')
-      router.refresh()
-    } catch (err: any) { setError(err.message) }
-    finally { setSaving(false) }
+      setSuccess(`Transaksi tersimpan! ${savedItems} item · ${savedQty} pcs · ${formatRupiah(savedTotal)}`)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-3">
       <div className="glass-mini rounded-xl p-3">
         <label className="block text-[10px] font-bold uppercase text-pink-900/70 mb-1">Tanggal Transaksi</label>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold" />
+        <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setSuccess(null) }} className="custom-input w-full rounded-lg py-2 px-3 text-sm font-semibold" />
       </div>
+
+      {/* === Success banner (NEW — stays until user starts new input) === */}
+      {success && (
+        <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl py-2.5 px-3">
+          ✅ {success}
+          <p className="text-[10px] font-normal text-emerald-600 mt-0.5">Keranjang dikosongkan. Tambah produk untuk input transaksi baru.</p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between px-1">
         <h2 className="text-xs font-bold text-pink-950 flex items-center gap-1">🛒 Keranjang</h2>
