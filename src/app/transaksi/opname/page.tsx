@@ -61,7 +61,7 @@ export default async function OpnamePage({
   const today = getTodayISO()
 
   return (
-    <AppShell title="Stock Opname" showBackButton backHref="/dashboard">
+    <AppShell title="Stock Opname" showBackButton backHref="/transaksi">
       {/* Tabs UI */}
       <OpnameTabs activeTab={tab} />
 
