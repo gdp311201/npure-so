@@ -71,6 +71,11 @@ export default function SellOutCart({
     setCart((prev) => prev.filter((item) => item.product_id !== productId))
   }
 
+  function closePicker() {
+    setShowPicker(false)
+    setSearch('')
+  }
+
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0)
   const discountAmount = Math.round(subtotal * discountRate)
   const total = subtotal - discountAmount
@@ -123,15 +128,12 @@ export default function SellOutCart({
 
       {/* Cart header */}
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-xs font-bold text-pink-950 flex items-center gap-1">
-          🛒 Keranjang
-        </h2>
+        <h2 className="text-xs font-bold text-pink-950 flex items-center gap-1">🛒 Keranjang</h2>
         <span className="text-[10px] text-pink-700/60 font-semibold">
           {cart.length} item{cart.length !== 1 ? 's' : ''} · {totalQty} pcs
         </span>
       </div>
 
-      {/* No products warning */}
       {products.length === 0 && (
         <div className="glass-card rounded-2xl p-4 text-center">
           <p className="text-xs text-rose-700 font-bold">⚠️ Tidak ada produk tersedia</p>
@@ -140,73 +142,90 @@ export default function SellOutCart({
       )}
 
       {/* Cart items */}
-      {cart.length === 0 ? (
+      {cart.length === 0 && !showPicker ? (
         <div className="glass-card rounded-2xl p-6 text-center">
           <div className="text-3xl mb-2 opacity-50">🛒</div>
           <p className="text-xs font-bold text-pink-900/70">Keranjang kosong</p>
           <p className="text-[10px] text-pink-900/50 mt-1">Klik "Tambah Produk" untuk mulai</p>
         </div>
-      ) : (
+      ) : cart.length > 0 ? (
         <div className="space-y-2">
           {cart.map((item) => (
             <div key={item.product_id} className="glass-card rounded-xl p-3">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-xs font-bold text-pink-950 flex-1 pr-2">{item.name}</p>
-                <button
-                  onClick={() => removeItem(item.product_id)}
-                  className="text-rose-500 text-sm hover:text-rose-700"
-                >
-                  🗑
-                </button>
+                <button onClick={() => removeItem(item.product_id)} className="text-rose-500 text-sm hover:text-rose-700">🗑</button>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQty(item.product_id, -1)}
-                    className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    value={item.qty}
-                    onChange={(e) => setQtyDirect(item.product_id, parseInt(e.target.value) || 0)}
-                    className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60"
-                    min="1"
-                  />
-                  <button
-                    onClick={() => updateQty(item.product_id, 1)}
-                    className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white"
-                  >
-                    +
-                  </button>
+                  <button onClick={() => updateQty(item.product_id, -1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">−</button>
+                  <input type="number" value={item.qty} onChange={(e) => setQtyDirect(item.product_id, parseInt(e.target.value) || 0)} className="w-12 text-center text-sm font-bold text-pink-950 bg-white/60 rounded-lg py-0.5 border border-pink-200/60" min="1" />
+                  <button onClick={() => updateQty(item.product_id, 1)} className="w-6 h-6 rounded-lg bg-white/60 text-pink-950 font-bold text-sm flex items-center justify-center hover:bg-white">+</button>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-pink-700/60">
-                    {formatRupiah(item.price)} × {item.qty}
-                  </p>
-                  <p className="text-sm font-bold text-pink-950">
-                    {formatRupiah(item.price * item.qty)}
-                  </p>
+                  <p className="text-[10px] text-pink-700/60">{formatRupiah(item.price)} × {item.qty}</p>
+                  <p className="text-sm font-bold text-pink-950">{formatRupiah(item.price * item.qty)}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Add product button */}
+      {/* Toggle button: Tambah Produk / Tutup Pencarian */}
       {products.length > 0 && (
         <button
-          onClick={() => setShowPicker(true)}
-          className="w-full glass-mini rounded-xl py-2.5 px-4 text-sm font-bold text-pink-950 border border-pink-200/60 hover:bg-white/60 transition"
+          onClick={() => showPicker ? closePicker() : setShowPicker(true)}
+          className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold transition ${
+            showPicker
+              ? 'bg-white/60 text-pink-950 border border-pink-200/60'
+              : 'glass-mini text-pink-950 border border-pink-200/60 hover:bg-white/60'
+          }`}
         >
-          + Tambah Produk
+          {showPicker ? '✕ Tutup Pencarian' : '+ Tambah Produk'}
         </button>
       )}
 
+      {/* INLINE Product Picker — no modal, no fixed positioning */}
+      {showPicker && (
+        <div className="space-y-2">
+          {/* Search card */}
+          <div className="glass-card rounded-xl p-3">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍 Cari produk..."
+              autoFocus
+              className="custom-input w-full rounded-xl py-2 px-3 text-sm"
+            />
+          </div>
+
+          {/* Results — scrollable, limited height */}
+          <div className="max-h-[35vh] overflow-y-auto space-y-1">
+            {filteredProducts.length === 0 ? (
+              <p className="text-xs text-pink-900/50 text-center py-4">Produk tidak ditemukan</p>
+            ) : (
+              filteredProducts.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => { addToCart(product); closePicker() }}
+                  className="w-full glass-mini rounded-xl p-3 flex items-center justify-between hover:bg-white/60 transition text-left"
+                >
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="text-xs font-bold text-pink-950 truncate">{product.name}</p>
+                    <p className="text-[10px] text-pink-700/60">{formatRupiah(Number(product.current_price))} · Stock: {product.current_stock}</p>
+                  </div>
+                  <div className="text-pink-400 font-bold text-lg">+</div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
-      {cart.length > 0 && (
+      {cart.length > 0 && !showPicker && (
         <div className="glass-card rounded-2xl p-4 space-y-1.5">
           <div className="flex justify-between text-xs text-pink-800/70">
             <span>Subtotal ({totalQty} pcs)</span>
@@ -223,78 +242,18 @@ export default function SellOutCart({
         </div>
       )}
 
-      {/* Error */}
       {error && (
-        <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">
-          ❌ {error}
-        </div>
+        <div className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">❌ {error}</div>
       )}
 
-      {/* Save button */}
-      <button
-        onClick={handleSave}
-        disabled={cart.length === 0 || saving}
-        className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-sm"
-      >
-        {saving ? '⏳ Menyimpan...' : `💾 Simpan Transaksi (${formatRupiah(total)})`}
-      </button>
-
-      {/* Product Picker Modal — centered, fixed */}
-      {showPicker && (
-        <div
-          className="fixed inset-0 z-50 glass-modal-backdrop flex items-center justify-center p-4"
-          onClick={() => setShowPicker(false)}
+      {!showPicker && (
+        <button
+          onClick={handleSave}
+          disabled={cart.length === 0 || saving}
+          className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-sm"
         >
-          <div
-            className="glass-modal-card rounded-2xl w-full max-w-md max-h-[70vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-pink-200/50 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-pink-950">Pilih Produk</h3>
-              <button
-                onClick={() => setShowPicker(false)}
-                className="text-pink-700/60 hover:text-pink-950 text-lg"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-3 border-b border-pink-200/50">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="🔍 Cari produk..."
-                autoFocus
-                className="custom-input w-full rounded-xl py-2 px-3 text-sm"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {filteredProducts.length === 0 ? (
-                <p className="text-xs text-pink-900/50 text-center py-4">Produk tidak ditemukan</p>
-              ) : (
-                filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => {
-                      addToCart(product)
-                      setShowPicker(false)
-                      setSearch('')
-                    }}
-                    className="w-full glass-mini rounded-xl p-3 flex items-center justify-between hover:bg-white/60 transition text-left"
-                  >
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className="text-xs font-bold text-pink-950 truncate">{product.name}</p>
-                      <p className="text-[10px] text-pink-700/60">
-                        {formatRupiah(Number(product.current_price))} · Stock: {product.current_stock}
-                      </p>
-                    </div>
-                    <div className="text-pink-400 font-bold text-lg">+</div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+          {saving ? '⏳ Menyimpan...' : `💾 Simpan Transaksi (${formatRupiah(total)})`}
+        </button>
       )}
     </div>
   )
