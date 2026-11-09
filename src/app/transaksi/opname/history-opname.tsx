@@ -185,14 +185,19 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
       console.log('[Delete Opname] Step 5: response parsed', result)
       if (!response.ok) throw new Error(result.error || 'Gagal hapus sesi opname')
 
-      // === SUCCESS: update local state (NO page reload needed) ===
-      // Remove deleted rows from localOpnames → useMemo recomputes → UI updates instantly
-      // This avoids all caching issues (no page reload = no cached HTML served)
-      console.log('[Delete Opname] Step 6: success, updating local state...')
+      // === SUCCESS: update local state + reload page ===
+      // 1. Local state update → instant UI feedback (sesi disappears immediately)
+      // 2. window.location.reload() → guaranteed fresh data from server
+      //    (with RLS fixed + force-dynamic, reload shows correct data)
+      console.log('[Delete Opname] Step 6: success, updating UI + reloading page...')
       const deletedIdSet = new Set(ids)
       setLocalOpnames(prev => prev.filter(o => !deletedIdSet.has(o.id)))
       setDeleteTarget(null)
       setDeleting(false)
+      // Reload after 300ms — lets React update UI first, then fetch fresh data
+      setTimeout(() => {
+        window.location.reload()
+      }, 300)
     } catch (err: any) {
       console.error('[Delete Opname] ERROR caught:', err.name, err.message)
       if (err.name === 'AbortError') {
