@@ -60,7 +60,7 @@ export default function SellInCart({
   }
 
   function setQtyDirect(productId: string, qty: number) {
-    if (qty <= 0) { removeItem(productId); return }
+    if (isNaN(qty) || qty <= 0) return
     setCart((prev) => prev.map((item) => (item.product_id === productId ? { ...item, qty } : item)))
   }
 
