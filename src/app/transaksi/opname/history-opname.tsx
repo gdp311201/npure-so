@@ -124,18 +124,35 @@ export default function HistoryOpname({ opnames }: { opnames: OpnameRow[] }) {
     setDeleteError(null)
     try {
       const ids = deleteTarget.rows.map((r) => r.id)
+      console.log('[Delete Opname] Sending request:', { ids, count: ids.length })
+
       const response = await fetch('/api/opname/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       })
+      console.log('[Delete Opname] Response status:', response.status, response.statusText)
+
+      // Handle non-JSON responses (e.g., 404 HTML page if endpoint missing)
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('[Delete Opname] Non-JSON response:', text.substring(0, 200))
+        if (response.status === 404) {
+          throw new Error('Endpoint /api/opname/delete tidak ditemukan (404). Cek file di src/app/api/opname/delete/route.ts')
+        }
+        throw new Error(`Server error ${response.status}: ${text.substring(0, 80)}...`)
+      }
+
       const result = await response.json()
+      console.log('[Delete Opname] Response body:', result)
       if (!response.ok) throw new Error(result.error || 'Gagal hapus sesi opname')
 
       // Close modal + refresh page to reload data
       setDeleteTarget(null)
       window.location.reload()
     } catch (err: any) {
+      console.error('[Delete Opname] Error:', err)
       setDeleteError(err.message)
     } finally {
       setDeleting(false)
