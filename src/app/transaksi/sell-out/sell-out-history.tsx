@@ -69,6 +69,21 @@ export default function SellOutHistory({ sales }: { sales: Sale[] }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // === Expand/collapse state (which sessions are expanded) ===
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set())
+
+  function toggleSession(key: string) {
+    setExpandedSessions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(key)) {
+        newSet.delete(key)
+      } else {
+        newSet.add(key)
+      }
+      return newSet
+    })
+  }
+
   // === Available years ===
   const availableYears = useMemo(() => {
     const years = new Set<number>()
@@ -219,68 +234,77 @@ export default function SellOutHistory({ sales }: { sales: Sale[] }) {
           const discountAmount = Number(sale.discount_amount || 0)
           const netAmount = Number(sale.net_amount || 0)
           const discountRate = Number(sale.discount_rate || 0)
+          const isExpanded = expandedSessions.has(sale.id)
 
           return (
             <div key={sale.id} className="glass-card rounded-2xl p-4">
-              {/* === Sale header === */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-bold text-pink-950">{formatDate(sale.transaction_date)}</p>
-                  <p className="text-[10px] font-bold uppercase text-pink-700 mt-0.5">🛒 Sell Out</p>
-                  <p className="text-[9px] text-pink-900/50 mt-0.5">{formatDateTime(sale.created_at)}</p>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100/80 text-emerald-700">
-                  {items.length} item · {totalQty} pcs
-                </span>
-              </div>
-
-              {/* === Sale summary stats === */}
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="glass-mini rounded-lg p-2 text-center">
-                  <p className="text-[9px] font-bold uppercase text-pink-900/60">Subtotal</p>
-                  <p className="text-xs font-bold text-pink-950 font-mono">{formatRupiah(grossAmount)}</p>
-                </div>
-                <div className="glass-mini rounded-lg p-2 text-center">
-                  <p className="text-[9px] font-bold uppercase text-pink-900/60">Diskon ({(discountRate * 100).toFixed(0)}%)</p>
-                  <p className="text-xs font-bold text-rose-500 font-mono">-{formatRupiah(discountAmount)}</p>
-                </div>
-                <div className="glass-mini rounded-lg p-2 text-center">
-                  <p className="text-[9px] font-bold uppercase text-pink-900/60">Total</p>
-                  <p className="text-xs font-black text-emerald-500 font-mono">{formatRupiah(netAmount)}</p>
-                </div>
-              </div>
-
-              {/* === Items detail === */}
-              <div className="space-y-1 mb-3">
-                <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Item:</p>
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-pink-950 leading-tight">{item.product_id.name}</p>
-                      <p className="text-pink-900/60 font-mono mt-0.5">
-                        {formatRupiah(Number(item.unit_price))} × {item.qty} pcs
-                      </p>
-                    </div>
-                    <span className="font-bold font-mono whitespace-nowrap text-pink-950">
-                      {formatRupiah(Number(item.unit_price) * item.qty)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* === Footer: delete button === */}
-              <button
-                onClick={() => {
-                  setDeleteTarget(sale)
-                  setDeleteError(null)
-                }}
-                className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
+              {/* === Compact header (always visible — click to expand/collapse) === */}
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleSession(sale.id)}
               >
-                🗑 Hapus Transaksi Ini
-              </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-pink-950">{formatDate(sale.transaction_date)}</p>
+                  <p className="text-[10px] text-pink-700/70 mt-0.5">
+                    🛒 {items.length} item · {totalQty} pcs · <span className="font-bold text-emerald-600">{formatRupiah(netAmount)}</span>
+                  </p>
+                  <p className="text-[9px] text-pink-900/40 mt-0.5">{formatDateTime(sale.created_at)}</p>
+                </div>
+                <span className="text-lg ml-2">{isExpanded ? '🔼' : '🔽'}</span>
+              </div>
+
+              {/* === Expanded content (only when expanded) === */}
+              {isExpanded && (
+                <div className="mt-3">
+                  {/* Sale summary stats */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Subtotal</p>
+                      <p className="text-xs font-bold text-pink-950 font-mono">{formatRupiah(grossAmount)}</p>
+                    </div>
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Diskon ({(discountRate * 100).toFixed(0)}%)</p>
+                      <p className="text-xs font-bold text-rose-500 font-mono">-{formatRupiah(discountAmount)}</p>
+                    </div>
+                    <div className="glass-mini rounded-lg p-2 text-center">
+                      <p className="text-[9px] font-bold uppercase text-pink-900/60">Total</p>
+                      <p className="text-xs font-black text-emerald-500 font-mono">{formatRupiah(netAmount)}</p>
+                    </div>
+                  </div>
+
+                  {/* Items detail */}
+                  <div className="space-y-1 mb-3">
+                    <p className="text-[10px] font-bold uppercase text-pink-900/60 mb-1">Detail Item:</p>
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="glass-mini rounded-lg p-2 flex items-start justify-between text-[10px] gap-2"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-pink-950 leading-tight">{item.product_id.name}</p>
+                          <p className="text-pink-900/60 font-mono mt-0.5">
+                            {formatRupiah(Number(item.unit_price))} × {item.qty} pcs
+                          </p>
+                        </div>
+                        <span className="font-bold font-mono whitespace-nowrap text-pink-950">
+                          {formatRupiah(Number(item.unit_price) * item.qty)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => {
+                      setDeleteTarget(sale)
+                      setDeleteError(null)
+                    }}
+                    className="w-full py-1.5 rounded-lg text-[10px] font-bold text-rose-600 bg-rose-50/60 border border-rose-200/60 hover:bg-rose-100/80 transition"
+                  >
+                    🗑 Hapus Transaksi Ini
+                  </button>
+                </div>
+              )}
             </div>
           )
         })
