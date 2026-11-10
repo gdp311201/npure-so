@@ -32,12 +32,12 @@ export default function CaraPakaiButton() {
       {/* === Modal Overlay === */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={() => setShowModal(false)}
         >
           {/* Modal content — click inside doesn't close */}
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col"
+            className="glass-card rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* === Modal header === */}
@@ -59,8 +59,8 @@ export default function CaraPakaiButton() {
               </button>
             </div>
 
-            {/* === Modal body (scrollable) === */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {/* === Modal body (scrollable) === min-h-0 critical for flex scrolling */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
               <CaraPakaiContent />
             </div>
 
