@@ -144,33 +144,58 @@ export default function CaraPakaiContent() {
       {SECTIONS.map((section) => {
         const isExpanded = expandedSections.has(section.key)
         return (
-          <div key={section.key} className="glass-mini rounded-xl overflow-hidden">
+          <div
+            key={section.key}
+            className="rounded-xl overflow-hidden"
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(52, 211, 153, 0.12)',
+            }}
+          >
             {/* Section header — clickable */}
             <button
               onClick={() => toggleSection(section.key)}
-              className="w-full flex items-center justify-between p-3 text-left hover:bg-white/10 transition"
+              className="w-full flex items-center justify-between p-3 text-left transition"
+              style={{ background: 'transparent' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(52, 211, 153, 0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="text-lg flex-shrink-0">{section.icon}</span>
-                <span className="text-xs font-bold text-pink-950 truncate">{section.title}</span>
+                <span className="text-xs font-bold truncate" style={{ color: '#d1fae5' }}>
+                  {section.title}
+                </span>
               </div>
-              <span className="text-sm ml-2 flex-shrink-0">{isExpanded ? '🔼' : '🔽'}</span>
+              <span className="text-sm ml-2 flex-shrink-0" style={{ color: '#6ee7b7' }}>
+                {isExpanded ? '🔼' : '🔽'}
+              </span>
             </button>
 
             {/* Expanded content */}
             {isExpanded && (
               <div className="px-3 pb-3 space-y-2">
-                <p className="text-[11px] text-pink-900/70 leading-relaxed">{section.description}</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(209, 250, 229, 0.75)' }}>
+                  {section.description}
+                </p>
 
                 {/* Sub-items */}
                 {section.subItems && section.subItems.length > 0 && (
                   <div className="space-y-2 mt-2">
                     {section.subItems.map((sub) => (
-                      <div key={sub.title} className="glass-card rounded-lg p-2.5">
-                        <p className="text-[11px] font-bold text-pink-950 mb-1">
+                      <div
+                        key={sub.title}
+                        className="rounded-lg p-2.5"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(52, 211, 153, 0.08)',
+                        }}
+                      >
+                        <p className="text-[11px] font-bold mb-1" style={{ color: '#a7f3d0' }}>
                           {sub.icon} {sub.title}
                         </p>
-                        <p className="text-[10px] text-pink-900/70 leading-relaxed">{sub.description}</p>
+                        <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(209, 250, 229, 0.65)' }}>
+                          {sub.description}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -182,12 +207,22 @@ export default function CaraPakaiContent() {
       })}
 
       {/* === Tips section (always visible) === */}
-      <div className="glass-card rounded-xl p-3 mt-3">
-        <p className="text-xs font-bold text-pink-950 mb-2">💡 Tips Cepat</p>
+      <div
+        className="rounded-xl p-3 mt-3"
+        style={{
+          background: 'rgba(52, 211, 153, 0.08)',
+          border: '1px solid rgba(52, 211, 153, 0.2)',
+        }}
+      >
+        <p className="text-xs font-bold mb-2" style={{ color: '#6ee7b7' }}>💡 Tips Cepat</p>
         <ul className="space-y-1">
           {TIPS.map((tip, i) => (
-            <li key={i} className="text-[10px] text-pink-900/70 leading-relaxed flex items-start gap-1.5">
-              <span className="text-emerald-500 flex-shrink-0">•</span>
+            <li
+              key={i}
+              className="text-[10px] leading-relaxed flex items-start gap-1.5"
+              style={{ color: 'rgba(209, 250, 229, 0.8)' }}
+            >
+              <span className="flex-shrink-0" style={{ color: '#34d399' }}>•</span>
               <span>{tip}</span>
             </li>
           ))}
@@ -195,4 +230,4 @@ export default function CaraPakaiContent() {
       </div>
     </div>
   )
-} 
+}
