@@ -8,7 +8,6 @@ export default function CaraPakaiButton() {
   const [showModal, setShowModal] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Mount check — needed for createPortal (SSR safe)
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -36,49 +35,52 @@ export default function CaraPakaiButton() {
         <span className="text-sm">💡</span>
       </button>
 
-      {/* === Modal Overlay — rendered via Portal to escape header stacking context === */}
+      {/* === Modal Overlay — rendered via Portal === */}
       {showModal && mounted && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
           onClick={() => setShowModal(false)}
         >
-          {/* === Modal content — frosted glass, HIGH opacity === */}
+          {/* === Modal content — DARK frosted glass (match login page theme) === */}
           <div
             className="rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden"
             style={{
-              background: 'rgba(255, 255, 255, 0.96)',
+              background: 'rgba(6, 78, 59, 0.88)',
               backdropFilter: 'blur(24px) saturate(180%)',
               WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+              border: '1px solid rgba(52, 211, 153, 0.25)',
+              boxShadow: '0 0 24px rgba(52, 211, 153, 0.15), 0 25px 50px rgba(0, 0, 0, 0.5)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* === Modal header === */}
             <div
               className="flex items-start justify-between p-4 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.08)' }}
+              style={{ borderBottom: '1px solid rgba(52, 211, 153, 0.15)' }}
             >
               <div>
-                <h2 className="text-base font-black text-pink-950 tracking-tight">
+                <h2 className="text-base font-black tracking-tight" style={{ color: '#d1fae5' }}>
                   NPURE Playbook
                 </h2>
-                <p className="text-[10px] text-pink-900/60 mt-0.5">
+                <p className="text-[10px] mt-0.5" style={{ color: 'rgba(209, 250, 229, 0.6)' }}>
                   Your smart guide to mastering the app
                 </p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded-full w-7 h-7 flex items-center justify-center hover:bg-black/5 transition flex-shrink-0"
-                style={{ background: 'rgba(0, 0, 0, 0.04)' }}
+                className="rounded-full w-7 h-7 flex items-center justify-center transition flex-shrink-0 hover:bg-white/10"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
                 aria-label="Tutup"
               >
-                <span className="text-xs text-pink-950">✕</span>
+                <span className="text-xs" style={{ color: '#d1fae5' }}>✕</span>
               </button>
             </div>
 
@@ -90,7 +92,7 @@ export default function CaraPakaiButton() {
             {/* === Modal footer === */}
             <div
               className="p-3 flex-shrink-0"
-              style={{ borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}
+              style={{ borderTop: '1px solid rgba(52, 211, 153, 0.15)' }}
             >
               <button
                 onClick={() => setShowModal(false)}
