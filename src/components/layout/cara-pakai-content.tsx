@@ -195,4 +195,4 @@ export default function CaraPakaiContent() {
       </div>
     </div>
   )
-}
+} 
