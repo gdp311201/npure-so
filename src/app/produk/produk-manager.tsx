@@ -41,7 +41,7 @@ export default function ProdukManager({ products }: { products: Product[] }) {
     return result
   }, [products, tab, filter, search])
 
-  // === NEW: Stock summary calculation (for stock tab only) ===
+  // === Stock summary calculation (for stock tab only) ===
   const stockSummary = useMemo(() => {
     const activeFiltered = filteredProducts.filter((p) => p.is_active)
     const totalStock = activeFiltered.reduce((sum, p) => sum + (p.current_stock || 0), 0)
@@ -161,28 +161,33 @@ export default function ProdukManager({ products }: { products: Product[] }) {
             className="custom-input w-full rounded-xl py-2 px-3 text-sm"
           />
 
-          {/* === NEW: Summary Card === */}
-          <div className="glass-card rounded-2xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase text-pink-900/70">Total Stock</span>
-              <span className="text-[10px] text-pink-700/50">{stockSummary.skuCount} SKU</span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-pink-950 font-mono">{stockSummary.totalStock}</span>
-              <span className="text-xs text-pink-700/60">pcs</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <div className="text-center">
-                <div className="text-sm font-bold text-emerald-600 font-mono">{stockSummary.okCount}</div>
-                <div className="text-[9px] text-pink-700/50 font-semibold">OK</div>
+          {/* === Summary Cards — split into separate cards === */}
+          <div className="space-y-2">
+            {/* Total Stock Card */}
+            <div className="glass-card rounded-2xl p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase text-pink-900/70">Total Stock</span>
+                <span className="text-[10px] text-pink-700/50">{stockSummary.skuCount} SKU</span>
               </div>
-              <div className="text-center">
-                <div className="text-sm font-bold text-amber-600 font-mono">{stockSummary.lowCount}</div>
-                <div className="text-[9px] text-pink-700/50 font-semibold">Low</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-pink-950 font-mono leading-none">{stockSummary.totalStock}</span>
+                <span className="text-xs text-pink-700/60">pcs</span>
               </div>
-              <div className="text-center">
-                <div className="text-sm font-bold text-rose-600 font-mono">{stockSummary.habisCount}</div>
-                <div className="text-[9px] text-pink-700/50 font-semibold">Habis</div>
+            </div>
+
+            {/* Status Breakdown — 3 separate cards */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="glass-card rounded-xl p-2.5 text-center">
+                <div className="text-xl font-bold text-emerald-600 font-mono leading-none">{stockSummary.okCount}</div>
+                <div className="text-[9px] text-pink-700/60 font-semibold mt-1">OK</div>
+              </div>
+              <div className="glass-card rounded-xl p-2.5 text-center">
+                <div className="text-xl font-bold text-amber-600 font-mono leading-none">{stockSummary.lowCount}</div>
+                <div className="text-[9px] text-pink-700/60 font-semibold mt-1">Low</div>
+              </div>
+              <div className="glass-card rounded-xl p-2.5 text-center">
+                <div className="text-xl font-bold text-rose-600 font-mono leading-none">{stockSummary.habisCount}</div>
+                <div className="text-[9px] text-pink-700/60 font-semibold mt-1">Habis</div>
               </div>
             </div>
           </div>
